@@ -22,6 +22,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role_id',
     ];
 
     /**
@@ -33,7 +34,17 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+    
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
 
+    // Relación: Un usuario tiene MUCHOS viajes (1:N)
+    public function viajes()
+    {
+        return $this->hasMany(Viaje::class);
+    }
     /**
      * Get the attributes that should be cast.
      *
