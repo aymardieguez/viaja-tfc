@@ -30,6 +30,8 @@ class ViajeController extends Controller
             'presupuesto' => 'required|numeric|min:0',
             'noches' => 'required|integer|min:1|max:15',
             'filtros' => 'nullable|array',
+            'personas' => 'required|integer|min:1|max:20',
+            'intereses' => 'nullable|array',
         ]);
 
         $viaje = Auth::user()->viajes()->create([
@@ -38,10 +40,12 @@ class ViajeController extends Controller
             'presupuesto' => $validated['presupuesto'],
             'noches' => $validated['noches'],
             'filtros_ia' => $validated['filtros'] ?? null,
+            'personas' => $validated['personas'],
+            'intereses' => $validated['intereses'] ?? null,
         ]);
 
         $prompt = "Eres un planificador de viajes experto y un guía turístico local especializado en {$validated['destino']}.
-        Tu objetivo es crear un itinerario REALISTA, EXHAUSTIVO y MUY ESPECÍFICO de {$validated['noches']} noches.
+        Tu objetivo es crear un itinerario REALISTA, EXHAUSTIVO y MUY ESPECÍFICO de {$validated['noches']} noches para {$validated['personas']} personas.
         Presupuesto total del usuario: {$validated['presupuesto']} euros.
 
         REGLAS ESTRICTAS QUE DEBES CUMPLIR SÍ O SÍ:
@@ -57,6 +61,11 @@ class ViajeController extends Controller
             $filtrosTexto = json_encode($validated['filtros']);
             $prompt .= "\n4. NECESIDADES ESPECIALES (CRÍTICO): El usuario requiere estrictamente: {$filtrosTexto}. 
             Es VITAL y OBLIGATORIO que los nombres de los hoteles y restaurantes que propongas estén adaptados a estas necesidades (por ejemplo, si usa silla de ruedas, nombra lugares que sepas que no tienen barreras arquitectónicas).\n";
+        }
+
+        if (!empty($validated['intereses'])) {
+            $interesesTexto = implode(", ", $validated['intereses']);
+            $prompt .= " ENFOQUE DEL VIAJE: Prioriza actividades relacionadas con: {$interesesTexto}. ";
         }
 
         // El formato de salida intacto
