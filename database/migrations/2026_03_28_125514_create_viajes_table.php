@@ -20,6 +20,8 @@ return new class extends Migration
             $table->integer('noches');
             $table->string('imagen')->nullable();
             $table->boolean('favorito')->default(false);
+            $table->integer('personas')->default(1);
+            $table->json('intereses')->nullable();
             $table->json('filtros_ia')->nullable();
             $table->timestamps();
         });
