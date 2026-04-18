@@ -1,9 +1,33 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { Head, Link } from "@inertiajs/vue3";
+import { ref, onMounted, onUnmounted } from "vue";
 
 defineProps({
     viaje: Object,
+});
+
+const carruselRef = ref(null);
+let intervalo = null;
+onMounted(() => {
+    intervalo = setInterval(() => {
+        if (carruselRef.value) {
+            const maxScroll =
+                carruselRef.value.scrollWidth - carruselRef.value.clientWidth;
+            if (carruselRef.value.scrollLeft >= maxScroll - 10) {
+                carruselRef.value.scrollTo({ left: 0, behavior: "smooth" });
+            } else {
+                carruselRef.value.scrollBy({
+                    left: carruselRef.value.clientWidth,
+                    behavior: "smooth",
+                });
+            }
+        }
+    }, 3500);
+});
+
+onUnmounted(() => {
+    clearInterval(intervalo);
 });
 </script>
 
@@ -27,6 +51,59 @@ defineProps({
 
         <div class="py-12">
             <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+                <div
+                    class="mb-8 w-full overflow-hidden rounded-xl shadow-lg relative h-64 sm:h-80"
+                >
+                    <div
+                        ref="carruselRef"
+                        class="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar h-full w-full bg-gray-200"
+                    >
+                        <template
+                            v-if="viaje.imagenes && viaje.imagenes.length > 0"
+                        >
+                            <div
+                                v-for="(imgUrl, index) in viaje.imagenes"
+                                :key="index"
+                                class="snap-center shrink-0 w-full h-full"
+                            >
+                                <img
+                                    :src="imgUrl"
+                                    class="w-full h-full object-cover"
+                                    :alt="`Foto real de ${viaje.destino}`"
+                                    loading="lazy"
+                                />
+                            </div>
+                        </template>
+
+                        <template v-else>
+                            <div
+                                v-for="n in 3"
+                                :key="'fallback-' + n"
+                                class="snap-center shrink-0 w-full h-full"
+                            >
+                                <img
+                                    :src="`https://picsum.photos/seed/${viaje.id}${n}viaje/1200/600`"
+                                    class="w-full h-full object-cover"
+                                    alt="Paisaje inspiracional"
+                                    loading="lazy"
+                                />
+                            </div>
+                        </template>
+                    </div>
+
+                    <div
+                        class="absolute bottom-0 left-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent w-full p-6 text-white pointer-events-none"
+                    >
+                        <h1 class="text-3xl font-extrabold">
+                            {{ viaje.titulo }}
+                        </h1>
+                        <p class="text-sm opacity-90 mt-1 font-medium">
+                            👥 {{ viaje.personas }} Personas | 🌙
+                            {{ viaje.noches }} Noches | 💰
+                            {{ viaje.presupuesto }}€
+                        </p>
+                    </div>
+                </div>
                 <div
                     class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6 flex justify-between items-center"
                 >
@@ -82,3 +159,13 @@ defineProps({
         </div>
     </AuthenticatedLayout>
 </template>
+
+<style scoped>
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+</style>
