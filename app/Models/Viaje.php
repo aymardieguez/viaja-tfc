@@ -12,17 +12,18 @@ class Viaje extends Model
         'destino',
         'presupuesto',
         'noches',
-        'imagen',
+        'imagenes',
         'favorito',
         'filtros_ia',
-        "personas",
-        "intereses"
+        'personas',
+        'intereses',
     ];
 
     protected $casts = [
         'filtros_ia' => 'array',
         'favorito' => 'boolean',
-        "intereses" => "array"
+        'intereses' => 'array',
+        'imagenes' => 'array',
     ];
 
     public function user()
