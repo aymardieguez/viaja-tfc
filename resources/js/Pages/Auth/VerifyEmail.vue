@@ -1,8 +1,9 @@
 <script setup>
-import { computed } from "vue";
+import { computed, onMounted, onUnmounted } from "vue";
 import GuestLayout from "@/Layouts/GuestLayout.vue";
 import PrimaryButton from "@/Components/PrimaryButton.vue";
-import { Head, Link, useForm } from "@inertiajs/vue3";
+import { Head, Link, useForm, router } from "@inertiajs/vue3";
+import axios from "axios";
 
 const props = defineProps({
     status: {
@@ -19,6 +20,30 @@ const submit = () => {
 const verificationLinkSent = computed(
     () => props.status === "verification-link-sent",
 );
+
+//polling
+
+let verificador = null;
+
+onMounted(() => {
+    verificador = setInterval(() => {
+        axios
+            .get(route("verificacion.estado"))
+            .then((response) => {
+                if (response.data.verificado) {
+                    // si ya se verificó apagamos el radar
+                    clearInterval(verificador);
+                    router.visit(route("viajes.index"));
+                }
+            })
+            .catch((error) => {});
+    }, 3000);
+});
+
+onUnmounted(() => {
+    //si el usuario cierra la pestaña, apagamos el radar
+    if (verificador) clearInterval(verificador);
+});
 </script>
 
 <template>
