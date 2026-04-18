@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Gemini\Laravel\Facades\Gemini;
+use Gemini\Data\GenerationConfig;
+use Gemini\Enums\ResponseMimeType; 
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
 
 class ViajeController extends Controller
@@ -34,16 +37,37 @@ class ViajeController extends Controller
             'intereses' => 'nullable|array',
         ]);
 
+        $urlsImagenes = [];
+        try {
+            $unsplashResponse = Http::get('https://api.unsplash.com/search/photos', [
+                'client_id' => env('UNSPLASH_ACCESS_KEY'),
+                'query' => $validated['destino'],
+                'per_page' => 3,
+                'orientation' => 'landscape'
+            ]);
+
+            if ($unsplashResponse->successful()) {
+                $resultados = $unsplashResponse->json()['results'];
+                foreach ($resultados as $foto) {
+                    $urlsImagenes[] = $foto['urls']['regular'];
+                }
+            }
+        } catch (\Exception $e) {
+        }
+
+        // 3. GUARDAMOS EL VIAJE EN LA BASE DE DATOS
         $viaje = Auth::user()->viajes()->create([
             'titulo' => 'Viaje a ' . $validated['destino'],
             'destino' => $validated['destino'],
             'presupuesto' => $validated['presupuesto'],
             'noches' => $validated['noches'],
-            'filtros_ia' => $validated['filtros'] ?? null,
             'personas' => $validated['personas'],
             'intereses' => $validated['intereses'] ?? null,
+            'filtros_ia' => $validated['filtros'] ?? null,
+            'imagenes' => $urlsImagenes,
         ]);
 
+        // 4. EL PROMPT PARA GEMINI
         $prompt = "Eres un planificador de viajes experto y un guía turístico local especializado en {$validated['destino']}.
         Tu objetivo es crear un itinerario REALISTA, EXHAUSTIVO y MUY ESPECÍFICO de {$validated['noches']} noches para {$validated['personas']} personas.
         Presupuesto total del usuario: {$validated['presupuesto']} euros.
@@ -52,10 +76,10 @@ class ViajeController extends Controller
         1. GEOGRAFÍA EXACTA: Todas las recomendaciones (restaurantes, hoteles, actividades) deben estar EXCLUSIVAMENTE en el municipio de {$validated['destino']} o a un máximo de 15 minutos en coche. PROHIBIDO recomendar lugares de otros pueblos lejanos.
         2. NOMBRES REALES: Debes proporcionar nombres reales y verificables de restaurantes, hoteles, museos y calles. No uses descripciones genéricas como 'un restaurante local'.
         3. ESTRUCTURA OBLIGATORIA: En el campo 'descripcion', debes dividir cada día estrictamente en estas 4 secciones usando iconos:
-           ☀️ MAÑANA:
-           🌇 TARDE:
-           🌙 NOCHE:
-           🏨 ALOJAMIENTO SUGERIDO: \n";
+        ☀️ MAÑANA:
+        🌇 TARDE:
+        🌙 NOCHE:
+        🏨 ALOJAMIENTO SUGERIDO: \n";
 
         if (!empty($validated['filtros'])) {
             $filtrosTexto = json_encode($validated['filtros']);
@@ -68,7 +92,6 @@ class ViajeController extends Controller
             $prompt .= " ENFOQUE DEL VIAJE: Prioriza actividades relacionadas con: {$interesesTexto}. ";
         }
 
-        // El formato de salida intacto
         $prompt .= "\nIMPORTANTE: Devuelve tu respuesta EXCLUSIVAMENTE como un array JSON válido, sin texto adicional y sin formato markdown. La estructura de cada objeto debe ser:
         [
             {
@@ -77,9 +100,16 @@ class ViajeController extends Controller
                 \"descripcion\": \"☀️ MAÑANA: [Texto...]\\n\\n🌇 TARDE: [Texto...]\\n\\n🌙 NOCHE: [Texto...]\\n\\n🏨 ALOJAMIENTO SUGERIDO: [Nombre del hotel]\"
             }
         ]";
-
+        
         try {
-            $respuestaGemini = Gemini::generativeModel('gemini-2.5-flash')->generateContent($prompt);
+            $respuestaGemini = Gemini::generativeModel('gemini-2.5-flash-lite')
+                ->withGenerationConfig(
+                    new GenerationConfig(
+                        responseMimeType: ResponseMimeType::APPLICATION_JSON,
+                    )
+                )
+                ->generateContent($prompt);
+
             $textoRaw = $respuestaGemini->text();
             $textoLimpiado = preg_replace('/^```json|```$/m', '', $textoRaw);
             $textoLimpiado = trim($textoLimpiado);
