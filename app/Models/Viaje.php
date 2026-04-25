@@ -17,6 +17,9 @@ class Viaje extends Model
         'filtros_ia',
         'personas',
         'intereses',
+        'mes',
+        'rango_edad',
+        'modo_pro',
     ];
 
     protected $casts = [
