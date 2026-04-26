@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Gemini\Laravel\Facades\Gemini;
 use Gemini\Data\GenerationConfig;
-use Gemini\Enums\ResponseMimeType; 
+use Gemini\Enums\ResponseMimeType;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
 
@@ -15,7 +15,7 @@ class ViajeController extends Controller
 {
     public function index()
     {
-        $viajes = Auth::user()->viajes;
+        $viajes = Auth::user()->viajes()->latest()->get();
         return Inertia::render('Viajes/Index', [
             'viajes' => $viajes
         ]);
@@ -32,10 +32,19 @@ class ViajeController extends Controller
             'destino' => 'required|string|max:255',
             'presupuesto' => 'required|numeric|min:0',
             'noches' => 'required|integer|min:1|max:15',
-            'filtros' => 'nullable|array',
             'personas' => 'required|integer|min:1|max:20',
+            'mes' => 'required|string',
+            'rango_edad' => 'required|string',
+            'modo_pro' => 'boolean',
             'intereses' => 'nullable|array',
+            'filtros' => 'nullable|array',
+            'filtros_extra' => 'nullable|string|max:255',
         ]);
+
+        $arrayFiltros = $validated['filtros'] ?? [];
+        if (!empty($validated['filtros_extra'])) {
+            $arrayFiltros[] = $validated['filtros_extra'];
+        }
 
         $urlsImagenes = [];
         try {
@@ -53,56 +62,76 @@ class ViajeController extends Controller
                 }
             }
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('Fallo en la API de Unsplash: ' . $e->getMessage());
         }
 
-        // 3. GUARDAMOS EL VIAJE EN LA BASE DE DATOS
         $viaje = Auth::user()->viajes()->create([
             'titulo' => 'Viaje a ' . $validated['destino'],
             'destino' => $validated['destino'],
             'presupuesto' => $validated['presupuesto'],
             'noches' => $validated['noches'],
             'personas' => $validated['personas'],
+            'mes' => $validated['mes'],
+            'rango_edad' => $validated['rango_edad'],
+            'modo_pro' => $validated['modo_pro'] ?? false,
             'intereses' => $validated['intereses'] ?? null,
-            'filtros_ia' => $validated['filtros'] ?? null,
+            'filtros_ia' => empty($arrayFiltros) ? null : $arrayFiltros,
             'imagenes' => $urlsImagenes,
         ]);
 
-        // 4. EL PROMPT PARA GEMINI
-        $prompt = "Eres un planificador de viajes experto y un guía turístico local especializado en {$validated['destino']}.
-        Tu objetivo es crear un itinerario REALISTA, EXHAUSTIVO y MUY ESPECÍFICO de {$validated['noches']} noches para {$validated['personas']} personas.
-        Presupuesto total del usuario: {$validated['presupuesto']} euros.
+        $motorIA = (isset($validated['modo_pro']) && $validated['modo_pro'])
+            ? 'gemini-3-flash-preview'
+            : 'gemini-2.5-flash';
 
-        REGLAS ESTRICTAS QUE DEBES CUMPLIR SÍ O SÍ:
-        1. GEOGRAFÍA EXACTA: Todas las recomendaciones (restaurantes, hoteles, actividades) deben estar EXCLUSIVAMENTE en el municipio de {$validated['destino']} o a un máximo de 15 minutos en coche. PROHIBIDO recomendar lugares de otros pueblos lejanos.
-        2. NOMBRES REALES: Debes proporcionar nombres reales y verificables de restaurantes, hoteles, museos y calles. No uses descripciones genéricas como 'un restaurante local'.
-        3. ESTRUCTURA OBLIGATORIA: En el campo 'descripcion', debes dividir cada día estrictamente en estas 4 secciones usando iconos:
+        $prompt = "Actúa como un guía turístico local EXPERTO y ESTRICTAMENTE PRECISO de {$validated['destino']}.
+        Crea un itinerario de {$validated['noches']} noches para {$validated['personas']} personas.
+        Mes: {$validated['mes']} | Presupuesto: {$validated['presupuesto']}€.
+
+        REGLAS INQUEBRANTABLES:
+        1. GEOGRAFÍA EXACTA: Verifica mentalmente la ubicación exacta de {$validated['destino']}. NO mezcles lugares de otras provincias.
+        2. CERO INVENCIONES: Solo nombres de restaurantes, hoteles y lugares 100% REALES. Si no conoces locales en esa zona, escribe 'Elección libre por la zona'. PROHIBIDO inventar nombres.
+        3. FORMATO DIARIO: Describe cada día usando estrictamente estas etiquetas:
         ☀️ MAÑANA:
         🌇 TARDE:
-        🌙 NOCHE:
-        🏨 ALOJAMIENTO SUGERIDO: \n";
+        🌙 NOCHE:\n";
 
-        if (!empty($validated['filtros'])) {
-            $filtrosTexto = json_encode($validated['filtros']);
-            $prompt .= "\n4. NECESIDADES ESPECIALES (CRÍTICO): El usuario requiere estrictamente: {$filtrosTexto}. 
-            Es VITAL y OBLIGATORIO que los nombres de los hoteles y restaurantes que propongas estén adaptados a estas necesidades (por ejemplo, si usa silla de ruedas, nombra lugares que sepas que no tienen barreras arquitectónicas).\n";
+        if (!empty($arrayFiltros)) {
+            $filtrosTexto = implode(", ", $arrayFiltros);
+            $prompt .= "\n4. NECESIDADES: El usuario requiere: {$filtrosTexto}. Si recomiendas un lugar real, asegúrate de que sea compatible.\n";
         }
 
         if (!empty($validated['intereses'])) {
             $interesesTexto = implode(", ", $validated['intereses']);
-            $prompt .= " ENFOQUE DEL VIAJE: Prioriza actividades relacionadas con: {$interesesTexto}. ";
+            $prompt .= "\n5. INTERESES: Centra las actividades en: {$interesesTexto}.\n";
         }
 
-        $prompt .= "\nIMPORTANTE: Devuelve tu respuesta EXCLUSIVAMENTE como un array JSON válido, sin texto adicional y sin formato markdown. La estructura de cada objeto debe ser:
+        if (isset($validated['modo_pro']) && $validated['modo_pro']) {
+            $prompt .= "\n6. MODO PRO (ITINERARIO EXTENDIDO Y PROFUNDO): El usuario ha optado por la versión premium. Escribe párrafos LARGOS, RICOS Y MUY DETALLADOS. Por cada lugar que recomiendes, explica su historia, por qué merece la pena, qué platos específicos pedir en el restaurante recomendado y detalles logísticos reales de cómo llegar. NO seas breve.\n";
+        } else {
+            $prompt .= "\n6. MODO ESTÁNDAR: Sé directo y conciso con los planes.\n";
+        }
+
+        $prompt .= "\nIMPORTANTE - ESTRUCTURA JSON OBLIGATORIA:
+        Devuelve SOLO un array JSON válido.
+        - El Día 1 DEBE incluir obligatoriamente la etiqueta '🏨 ALOJAMIENTO:' al final.
+        - Del Día 2 en adelante, NO incluyas alojamiento.
+        
+        EJEMPLO EXACTO DE SALIDA (Respeta el formato JSON estrictamente):
         [
             {
                 \"numero_dia\": 1,
-                \"titulo\": \"Título atractivo del día\",
-                \"descripcion\": \"☀️ MAÑANA: [Texto...]\\n\\n🌇 TARDE: [Texto...]\\n\\n🌙 NOCHE: [Texto...]\\n\\n🏨 ALOJAMIENTO SUGERIDO: [Nombre del hotel]\"
+                \"titulo\": \"Título del primer día\",
+                \"descripcion\": \"☀️ MAÑANA: [Texto abundante y detallado]\\n\\n🌇 TARDE: [Texto abundante y detallado]\\n\\n🌙 NOCHE: [Texto abundante y detallado]\\n\\n🏨 ALOJAMIENTO: [Nombre real o 'Buscar en la zona']\"
+            },
+            {
+                \"numero_dia\": 2,
+                \"titulo\": \"Título del segundo día\",
+                \"descripcion\": \"☀️ MAÑANA: [Texto abundante y detallado]\\n\\n🌇 TARDE: [Texto abundante y detallado]\\n\\n🌙 NOCHE: [Texto abundante y detallado]\"
             }
         ]";
-        
+
         try {
-            $respuestaGemini = Gemini::generativeModel('gemini-2.5-flash-lite')
+            $respuestaGemini = Gemini::generativeModel($motorIA)
                 ->withGenerationConfig(
                     new GenerationConfig(
                         responseMimeType: ResponseMimeType::APPLICATION_JSON,
@@ -111,15 +140,27 @@ class ViajeController extends Controller
                 ->generateContent($prompt);
 
             $textoRaw = $respuestaGemini->text();
-            $textoLimpiado = preg_replace('/^```json|```$/m', '', $textoRaw);
-            $textoLimpiado = trim($textoLimpiado);
+            $textoLimpiado = str_replace(['```json', '```'], '', $textoRaw);
+            $inicio = strpos($textoLimpiado, '[');
+            preg_match('/\}\s*\]/', $textoLimpiado, $coincidencias, PREG_OFFSET_CAPTURE);
+
+            if ($inicio !== false && !empty($coincidencias)) {
+                $fin = $coincidencias[0][1] + strlen($coincidencias[0][0]) - 1;
+                $textoLimpiado = substr($textoLimpiado, $inicio, $fin - $inicio + 1);
+            } else {
+                $fin = strrpos($textoLimpiado, ']');
+                if ($inicio !== false && $fin !== false) {
+                    $textoLimpiado = substr($textoLimpiado, $inicio, $fin - $inicio + 1);
+                }
+            }
+
             $diasGenerados = json_decode($textoLimpiado, true);
 
             if (json_last_error() !== JSON_ERROR_NONE) {
                 dd([
                     'Error JSON' => json_last_error_msg(),
                     'Lo que envió la IA' => $textoRaw,
-                    'Lo que intentamos limpiar' => $textoLimpiado
+                    'Lo que recortó PHP' => $textoLimpiado
                 ]);
             }
 
