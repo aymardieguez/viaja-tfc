@@ -44,10 +44,26 @@ class AdminController extends Controller
     {
         //obtenemos los viajes de un determinado usuario
         $viajes = $user->viajes()->latest()->get();
-        
+
         return Inertia::render('Admin/UsuarioViajes', [
             'usuario' => $user,
             'viajes' => $viajes
         ]);
+    }
+    public function destroyUser(User $user)
+    {
+        //un admin no puede autoeliminarse
+        if (auth()->id() === $user->id) {
+            return back();
+        }
+
+        $user->delete();
+        return back(); //recarga la página
+    }
+
+    public function destroyViaje(Viaje $viaje)
+    {
+        $viaje->delete();
+        return back();
     }
 }

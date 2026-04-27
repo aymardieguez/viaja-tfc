@@ -57,6 +57,11 @@ const formatearFecha = (fecha) => {
                                 >
                                     Modo Pro
                                 </th>
+                                <th
+                                    class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                >
+                                    Acciones
+                                </th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -94,6 +99,26 @@ const formatearFecha = (fecha) => {
                                         class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800"
                                         >No</span
                                     >
+                                </td>
+                                <td class="px-6 py-4 text-right">
+                                    <Link
+                                        :href="
+                                            route(
+                                                'admin.viajes.destroy',
+                                                viaje.id,
+                                            )
+                                        "
+                                        method="delete"
+                                        as="button"
+                                        class="text-red-600 hover:text-red-900 font-bold text-xs"
+                                        onclick="
+                                            return confirm(
+                                                '¿Quieres borrar este itinerario específico?',
+                                            );
+                                        "
+                                    >
+                                        Borrar Viaje
+                                    </Link>
                                 </td>
                             </tr>
                             <tr v-if="viajes.length === 0">

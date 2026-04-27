@@ -139,11 +139,24 @@ const dataGrafica = {
                                             Ver Viajes
                                         </Link>
 
-                                        <button
+                                        <Link
+                                            :href="
+                                                route(
+                                                    'admin.usuarios.destroy',
+                                                    user.id,
+                                                )
+                                            "
+                                            method="delete"
+                                            as="button"
                                             class="text-red-500 hover:underline text-xs font-bold"
+                                            onclick="
+                                                return confirm(
+                                                    '¿Estás seguro? Se borrarán el usuario y sus viajes.',
+                                                );
+                                            "
                                         >
                                             Eliminar
-                                        </button>
+                                        </Link>
                                     </td>
                                 </tr>
                             </tbody>
