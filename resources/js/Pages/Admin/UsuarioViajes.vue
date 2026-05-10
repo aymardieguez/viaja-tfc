@@ -1,6 +1,8 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import { Head, Link } from "@inertiajs/vue3";
+import { Head, Link, router } from "@inertiajs/vue3";
+import ConfirmModal from "@/Components/ConfirmModal.vue";
+import { ref } from "vue";
 
 defineProps({
     usuario: Object,
@@ -9,6 +11,34 @@ defineProps({
 
 const formatearFecha = (fecha) => {
     return new Date(fecha).toLocaleDateString("es-ES");
+};
+
+const mostrarModal = ref(false);
+const viajeIdSeleccionado = ref(null);
+
+const confirmarBorrado = (id) => {
+    viajeIdSeleccionado.value = id;
+    mostrarModal.value = true;
+};
+
+const cancelarBorrado = () => {
+    mostrarModal.value = false;
+    viajeIdSeleccionado.value = null;
+};
+
+const ejecutarBorrado = () => {
+    if (viajeIdSeleccionado.value) {
+        router.delete(
+            route("admin.viajes.destroy", viajeIdSeleccionado.value),
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    mostrarModal.value = false;
+                    viajeIdSeleccionado.value = null;
+                },
+            },
+        );
+    }
 };
 </script>
 
@@ -101,29 +131,18 @@ const formatearFecha = (fecha) => {
                                     >
                                 </td>
                                 <td class="px-6 py-4 text-right">
-                                    <Link
-                                        :href="
-                                            route(
-                                                'admin.viajes.destroy',
-                                                viaje.id,
-                                            )
-                                        "
-                                        method="delete"
-                                        as="button"
+                                    <button
+                                        @click="confirmarBorrado(viaje.id)"
+                                        type="button"
                                         class="text-red-600 hover:text-red-900 font-bold text-xs"
-                                        onclick="
-                                            return confirm(
-                                                '¿Quieres borrar este itinerario específico?',
-                                            );
-                                        "
                                     >
                                         Borrar Viaje
-                                    </Link>
+                                    </button>
                                 </td>
                             </tr>
                             <tr v-if="viajes.length === 0">
                                 <td
-                                    colspan="4"
+                                    colspan="5"
                                     class="px-6 py-12 text-center text-gray-500"
                                 >
                                     Este usuario todavía no ha generado ningún
@@ -135,5 +154,14 @@ const formatearFecha = (fecha) => {
                 </div>
             </div>
         </div>
+
+        <ConfirmModal
+            :show="mostrarModal"
+            title="¿Borrar este itinerario?"
+            message="Esta acción borrará el viaje permanentemente de la base de datos."
+            confirmText="Eliminar viaje"
+            @close="cancelarBorrado"
+            @confirm="ejecutarBorrado"
+        />
     </AuthenticatedLayout>
 </template>

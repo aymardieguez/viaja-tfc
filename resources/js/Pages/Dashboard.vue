@@ -1,11 +1,38 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import { Head, Link } from "@inertiajs/vue3";
+import { Head, Link, router } from "@inertiajs/vue3";
+import ConfirmModal from "@/Components/ConfirmModal.vue";
+import { ref } from "vue";
 
 // Recibimos los viajes desde el controlador
 defineProps({
     viajes: Array,
 });
+
+const mostrarModal = ref(false);
+const viajeSeleccionado = ref(null);
+
+const confirmarBorrado = (id) => {
+    viajeSeleccionado.value = id;
+    mostrarModal.value = true;
+};
+
+const cancelarBorrado = () => {
+    mostrarModal.value = false;
+    viajeSeleccionado.value = null;
+};
+
+const borrarViaje = () => {
+    if (viajeSeleccionado.value) {
+        router.delete(route("viajes.destroy", viajeSeleccionado.value), {
+            preserveScroll: true,
+            onSuccess: () => {
+                mostrarModal.value = false;
+                viajeSeleccionado.value = null;
+            },
+        });
+    }
+};
 </script>
 
 <template>
@@ -103,7 +130,10 @@ defineProps({
 
                                 <div class="flex gap-2">
                                     <button
-                                        class="text-gray-400 hover:text-red-500 transition-colors"
+                                        @click="confirmarBorrado(viaje.id)"
+                                        type="button"
+                                        title="Eliminar viaje"
+                                        class="text-gray-400 hover:text-red-500 transition-colors focus:outline-none"
                                     >
                                         <svg
                                             class="w-5 h-5"
@@ -126,5 +156,14 @@ defineProps({
                 </div>
             </div>
         </div>
+
+        <ConfirmModal
+            :show="mostrarModal"
+            title="¿Eliminar viaje?"
+            message="Se borrará todo el itinerario y las imágenes asociadas a este destino. Esta acción no se puede deshacer."
+            confirmText="Sí, eliminar"
+            @close="cancelarBorrado"
+            @confirm="borrarViaje"
+        />
     </AuthenticatedLayout>
 </template>

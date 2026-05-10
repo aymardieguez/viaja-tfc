@@ -1,6 +1,8 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import { Head, Link } from "@inertiajs/vue3";
+import { Head, Link, router } from "@inertiajs/vue3";
+import ConfirmModal from "@/Components/ConfirmModal.vue";
+import { ref } from "vue";
 import { Bar } from "vue-chartjs";
 import {
     Chart as ChartJS,
@@ -36,6 +38,34 @@ const dataGrafica = {
             backgroundColor: "#8b5cf6",
         },
     ],
+};
+
+const mostrarModalUsuario = ref(false);
+const usuarioIdSeleccionado = ref(null);
+
+const confirmarBorradoUsuario = (id) => {
+    usuarioIdSeleccionado.value = id;
+    mostrarModalUsuario.value = true;
+};
+
+const cancelarBorradoUsuario = () => {
+    mostrarModalUsuario.value = false;
+    usuarioIdSeleccionado.value = null;
+};
+
+const ejecutarBorradoUsuario = () => {
+    if (usuarioIdSeleccionado.value) {
+        router.delete(
+            route("admin.usuarios.destroy", usuarioIdSeleccionado.value),
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    mostrarModalUsuario.value = false;
+                    usuarioIdSeleccionado.value = null;
+                },
+            },
+        );
+    }
 };
 </script>
 
@@ -139,24 +169,15 @@ const dataGrafica = {
                                             Ver Viajes
                                         </Link>
 
-                                        <Link
-                                            :href="
-                                                route(
-                                                    'admin.usuarios.destroy',
-                                                    user.id,
-                                                )
+                                        <button
+                                            @click="
+                                                confirmarBorradoUsuario(user.id)
                                             "
-                                            method="delete"
-                                            as="button"
+                                            type="button"
                                             class="text-red-500 hover:underline text-xs font-bold"
-                                            onclick="
-                                                return confirm(
-                                                    '¿Estás seguro? Se borrarán el usuario y sus viajes.',
-                                                );
-                                            "
                                         >
                                             Eliminar
-                                        </Link>
+                                        </button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -165,5 +186,14 @@ const dataGrafica = {
                 </div>
             </div>
         </div>
+
+        <ConfirmModal
+            :show="mostrarModalUsuario"
+            title="¿Borrar usuario?"
+            message="Se borrará permanentemente este usuario y TODOS sus viajes asociados. Esta acción no se puede deshacer."
+            confirmText="Sí, borrar usuario"
+            @close="cancelarBorradoUsuario"
+            @confirm="ejecutarBorradoUsuario"
+        />
     </AuthenticatedLayout>
 </template>

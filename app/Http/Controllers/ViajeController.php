@@ -180,4 +180,10 @@ class ViajeController extends Controller
             'viaje' => $viaje
         ]);
     }
+    public function destroy($id)
+    {
+        $viaje = \Illuminate\Support\Facades\Auth::user()->viajes()->findOrFail($id);
+        $viaje->delete();
+        return back();
+    }
 }

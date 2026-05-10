@@ -36,6 +36,7 @@ Route::middleware('auth', 'verified')->group(function () {
     Route::get('/mis-viajes/crear', [ViajeController::class, 'create'])->name('viajes.create');
     Route::post('/mis-viajes', [ViajeController::class, 'store'])->name('viajes.store');
     Route::get('/mis-viajes/{viaje}', [ViajeController::class, 'show'])->name('viajes.show');
+    Route::delete('/mis-viajes/{viaje}', [ViajeController::class, 'destroy'])->name('viajes.destroy');
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
