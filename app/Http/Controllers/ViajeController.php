@@ -13,14 +13,6 @@ use Illuminate\Support\Facades\Auth;
 
 class ViajeController extends Controller
 {
-    public function index()
-    {
-        $viajes = Auth::user()->viajes()->latest()->get();
-        return Inertia::render('Viajes/Index', [
-            'viajes' => $viajes
-        ]);
-    }
-
     public function create()
     {
         return Inertia::render("Viajes/Create");

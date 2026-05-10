@@ -52,10 +52,10 @@ const formatearDescripcion = (texto) => {
                     {{ viaje.titulo }}
                 </h2>
                 <Link
-                    :href="route('viajes.index')"
+                    :href="route('dashboard')"
                     class="text-blue-600 hover:underline text-sm font-semibold transition-colors"
                 >
-                    &larr; Volver a Mis Viajes
+                    &larr; Volver al Panel de Control
                 </Link>
             </div>
         </template>

@@ -58,10 +58,10 @@ defineProps({
             >
                 <Link
                     v-if="$page.props.auth.user"
-                    :href="route('viajes.index')"
+                    :href="route('dashboard')"
                     class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full shadow-lg transition-all text-lg hover:scale-105"
                 >
-                    Ir a Mis Viajes ✨
+                    Ver mis viajes ✨
                 </Link>
 
                 <template v-else>
