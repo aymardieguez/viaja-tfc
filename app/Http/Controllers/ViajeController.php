@@ -10,6 +10,8 @@ use Gemini\Data\GenerationConfig;
 use Gemini\Enums\ResponseMimeType;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Str;
 
 class ViajeController extends Controller
 {
@@ -185,5 +187,29 @@ class ViajeController extends Controller
         $viaje = \Illuminate\Support\Facades\Auth::user()->viajes()->findOrFail($id);
         $viaje->delete();
         return back();
+    }
+
+    public function descargarPdf($id)
+    {
+        $viaje = Auth::user()->viajes()->with('dias')->findOrFail($id);
+
+        $imagenBase64 = null;
+
+        if ($viaje->imagenes && count($viaje->imagenes) > 0) {
+            try {
+                $url = $viaje->imagenes[0];
+                $contenido = file_get_contents($url);
+                $tipo = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
+                if (!$tipo) $tipo = 'jpeg';
+                $imagenBase64 = 'data:image/' . $tipo . ';base64,' . base64_encode($contenido);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning("Error al procesar imagen para PDF: " . $e->getMessage());
+            }
+        }
+
+        $pdf = Pdf::loadView('pdf.viaje', compact('viaje', 'imagenBase64'));
+
+        $nombreArchivo = 'itinerario-' . \Illuminate\Support\Str::slug($viaje->destino) . '.pdf';
+        return $pdf->download($nombreArchivo);
     }
 }

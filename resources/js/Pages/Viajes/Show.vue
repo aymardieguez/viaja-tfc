@@ -47,16 +47,39 @@ const formatearDescripcion = (texto) => {
 
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex justify-between items-center">
+            <div
+                class="flex flex-col sm:flex-row justify-between items-center gap-4"
+            >
                 <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                     {{ viaje.titulo }}
                 </h2>
-                <Link
-                    :href="route('dashboard')"
-                    class="text-blue-600 hover:underline text-sm font-semibold transition-colors"
-                >
-                    &larr; Volver al Panel de Control
-                </Link>
+
+                <div class="flex items-center gap-4">
+                    <a
+                        :href="route('viajes.pdf', viaje.id)"
+                        class="inline-flex items-center gap-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-bold py-2 px-4 rounded-lg shadow-sm transition-all text-sm"
+                    >
+                        <svg
+                            class="w-4 h-4 text-red-500"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                        >
+                            <path
+                                fill-rule="evenodd"
+                                d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z"
+                                clip-rule="evenodd"
+                            />
+                        </svg>
+                        Descargar PDF
+                    </a>
+
+                    <Link
+                        :href="route('dashboard')"
+                        class="text-blue-600 hover:underline text-sm font-semibold transition-colors"
+                    >
+                        &larr; Volver al Panel
+                    </Link>
+                </div>
             </div>
         </template>
 
