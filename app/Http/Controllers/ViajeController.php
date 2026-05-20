@@ -10,6 +10,7 @@ use Gemini\Data\GenerationConfig;
 use Gemini\Enums\ResponseMimeType;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\URL;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
 
@@ -178,7 +179,21 @@ class ViajeController extends Controller
     {
         $viaje = Auth::user()->viajes()->with('dias')->findOrFail($id);
 
+        // generamos enlace
+        $shareUrl = URL::signedRoute('viajes.public', ['viaje' => $viaje->id]);
+
         return Inertia::render('Viajes/Show', [
+            'viaje' => $viaje,
+            'shareUrl' => $shareUrl
+        ]);
+    }
+
+    public function enlaceCompartirViaje($id)
+    {
+        //el enlace es público, no hace falta estar logueado
+        $viaje = \App\Models\Viaje::with('dias')->findOrFail($id);
+
+        return Inertia::render('Viajes/Public', [
             'viaje' => $viaje
         ]);
     }

@@ -3,9 +3,23 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { Head, Link } from "@inertiajs/vue3";
 import { ref, onMounted, onUnmounted } from "vue";
 
-defineProps({
+const props = defineProps({
     viaje: Object,
+    shareUrl: String,
 });
+
+const copiado = ref(false);
+const copiarEnlace = async () => {
+    try {
+        await navigator.clipboard.writeText(props.shareUrl);
+        copiado.value = true;
+        setTimeout(() => {
+            copiado.value = false;
+        }, 3000);
+    } catch (err) {
+        console.error("Error al copiar: ", err);
+    }
+};
 
 const carruselRef = ref(null);
 let intervalo = null;
@@ -72,6 +86,42 @@ const formatearDescripcion = (texto) => {
                         </svg>
                         Descargar PDF
                     </a>
+                    <button
+                        @click="copiarEnlace"
+                        class="inline-flex items-center gap-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-bold py-2 px-4 rounded-lg shadow-sm transition-all text-sm"
+                    >
+                        <svg
+                            v-if="!copiado"
+                            class="w-4 h-4 text-blue-500"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                            />
+                        </svg>
+
+                        <svg
+                            v-else
+                            class="w-4 h-4 text-green-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M5 13l4 4L19 7"
+                            />
+                        </svg>
+
+                        {{ copiado ? "¡Enlace copiado!" : "Copiar enlace" }}
+                    </button>
 
                     <Link
                         :href="route('dashboard')"

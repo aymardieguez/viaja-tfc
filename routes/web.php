@@ -25,6 +25,10 @@ Route::get('/dashboard', function () {
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+Route::get('/compartido/{viaje}', [ViajeController::class, 'enlaceCompartirViaje'])
+    ->name('viajes.public')
+    ->middleware('signed');
+
 Route::middleware('auth', 'verified')->group(function () {
     Route::get('/estado-verificacion', function (\Illuminate\Http\Request $request) {
         return response()->json(['verificado' => $request->user()->hasVerifiedEmail()]);
