@@ -78,9 +78,11 @@ const ejecutarBorradoUsuario = () => {
             </h2>
         </template>
 
-        <div class="py-12 bg-gray-100">
+        <div class="py-12 bg-gray-100 min-h-screen">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div
+                    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+                >
                     <div
                         class="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500"
                     >
@@ -91,6 +93,7 @@ const ejecutarBorradoUsuario = () => {
                             {{ stats.total_usuarios }}
                         </p>
                     </div>
+
                     <div
                         class="bg-white p-6 rounded-lg shadow border-l-4 border-purple-500"
                     >
@@ -101,6 +104,30 @@ const ejecutarBorradoUsuario = () => {
                             {{ stats.total_viajes }}
                         </p>
                     </div>
+
+                    <div
+                        class="bg-white p-6 rounded-lg shadow border-l-4 border-yellow-400"
+                    >
+                        <p class="text-gray-500 text-sm font-bold uppercase">
+                            Valoración Media
+                        </p>
+                        <div class="flex items-end gap-2">
+                            <p class="text-3xl font-black text-gray-900">
+                                {{
+                                    stats.valoracion_media
+                                        ? stats.valoracion_media
+                                        : "-"
+                                }}
+                            </p>
+                            <span class="text-yellow-400 text-2xl mb-1 pb-0.5"
+                                >⭐</span
+                            >
+                        </div>
+                        <p class="text-xs text-gray-400 font-medium mt-1">
+                            Basado en {{ stats.total_viajes_valorados }} reseñas
+                        </p>
+                    </div>
+
                     <div
                         class="bg-white p-6 rounded-lg shadow border-l-4 border-green-500"
                     >
@@ -109,11 +136,13 @@ const ejecutarBorradoUsuario = () => {
                         </p>
                         <p class="text-3xl font-black">
                             {{
-                                (
-                                    (stats.viajes_modo_pro /
-                                        stats.total_viajes) *
-                                    100
-                                ).toFixed(1)
+                                stats.total_viajes > 0
+                                    ? (
+                                          (stats.viajes_modo_pro /
+                                              stats.total_viajes) *
+                                          100
+                                      ).toFixed(1)
+                                    : 0
                             }}%
                         </p>
                     </div>

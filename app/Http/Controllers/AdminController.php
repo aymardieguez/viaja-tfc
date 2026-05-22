@@ -11,10 +11,15 @@ class AdminController extends Controller
 {
     public function dashboard()
     {
+
+        $valoracionMedia = Viaje::whereNotNull('valoracion')->avg('valoracion');
+
         $stats = [
             'total_usuarios' => User::count(),
             'total_viajes' => Viaje::count(),
             'viajes_modo_pro' => Viaje::where('modo_pro', true)->count(),
+            'valoracion_media' => $valoracionMedia ? round($valoracionMedia, 1) : 'N/A',
+            'total_viajes_valorados' => Viaje::whereNotNull('valoracion')->count(),
         ];
 
         //gráfica de viajes por mes (últimos 6 meses)
