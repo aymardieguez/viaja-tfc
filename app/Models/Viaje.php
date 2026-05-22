@@ -13,7 +13,6 @@ class Viaje extends Model
         'presupuesto',
         'noches',
         'imagenes',
-        'favorito',
         'filtros_ia',
         'personas',
         'intereses',
@@ -26,11 +25,11 @@ class Viaje extends Model
 
     protected $casts = [
         'filtros_ia' => 'array',
-        'favorito' => 'boolean',
         'intereses' => 'array',
         'imagenes' => 'array',
         'favorito' => 'boolean',
         'valoracion' => 'integer',
+        'modo_pro' => 'boolean',
     ];
 
     public function user()
