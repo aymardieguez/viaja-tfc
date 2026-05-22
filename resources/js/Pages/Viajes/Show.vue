@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import { Head, Link } from "@inertiajs/vue3";
+import { Head, Link, router } from "@inertiajs/vue3"; // Añadimos router aquí
 import { ref, onMounted, onUnmounted } from "vue";
 
 const props = defineProps({
@@ -8,6 +8,7 @@ const props = defineProps({
     shareUrl: String,
 });
 
+// --- COMPARTIR ENLACE ---
 const copiado = ref(false);
 const copiarEnlace = async () => {
     try {
@@ -21,6 +22,31 @@ const copiarEnlace = async () => {
     }
 };
 
+// --- FAVORITOS Y VALORACIÓN (NUEVO) ---
+const toggleFavorito = () => {
+    router.post(
+        route("viajes.favorito.toggle", props.viaje.id),
+        {},
+        {
+            preserveScroll: true,
+        },
+    );
+};
+
+const estrellaHover = ref(0);
+const valorar = (puntos) => {
+    router.post(
+        route("viajes.valorar", props.viaje.id),
+        {
+            valoracion: puntos,
+        },
+        {
+            preserveScroll: true,
+        },
+    );
+};
+
+// --- CARRUSEL ---
 const carruselRef = ref(null);
 let intervalo = null;
 
@@ -64,9 +90,47 @@ const formatearDescripcion = (texto) => {
             <div
                 class="flex flex-col sm:flex-row justify-between items-center gap-4"
             >
-                <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                    {{ viaje.titulo }}
-                </h2>
+                <div class="flex items-center gap-3">
+                    <button
+                        @click="toggleFavorito"
+                        class="p-2 rounded-full hover:bg-red-50 transition-colors focus:outline-none focus:ring-2 focus:ring-red-200"
+                        :title="
+                            viaje.favorito
+                                ? 'Quitar de favoritos'
+                                : 'Añadir a favoritos'
+                        "
+                    >
+                        <svg
+                            v-if="viaje.favorito"
+                            class="w-7 h-7 text-red-500 drop-shadow-sm"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"
+                            />
+                        </svg>
+                        <svg
+                            v-else
+                            class="w-7 h-7 text-gray-400 hover:text-red-400"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+                            />
+                        </svg>
+                    </button>
+                    <h2
+                        class="font-semibold text-xl text-gray-800 leading-tight"
+                    >
+                        {{ viaje.titulo }}
+                    </h2>
+                </div>
 
                 <div class="flex items-center gap-4">
                     <a
@@ -86,6 +150,7 @@ const formatearDescripcion = (texto) => {
                         </svg>
                         Descargar PDF
                     </a>
+
                     <button
                         @click="copiarEnlace"
                         class="inline-flex items-center gap-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-bold py-2 px-4 rounded-lg shadow-sm transition-all text-sm"
@@ -104,7 +169,6 @@ const formatearDescripcion = (texto) => {
                                 d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
                             />
                         </svg>
-
                         <svg
                             v-else
                             class="w-4 h-4 text-green-600"
@@ -119,7 +183,6 @@ const formatearDescripcion = (texto) => {
                                 d="M5 13l4 4L19 7"
                             />
                         </svg>
-
                         {{ copiado ? "¡Enlace copiado!" : "Copiar enlace" }}
                     </button>
 
@@ -161,7 +224,6 @@ const formatearDescripcion = (texto) => {
                                 ></div>
                             </div>
                         </template>
-
                         <template v-else>
                             <div
                                 v-for="n in 3"
@@ -272,7 +334,6 @@ const formatearDescripcion = (texto) => {
                                 {{ dia.titulo }}
                             </h4>
                         </div>
-
                         <div
                             class="p-6 md:p-8 text-gray-700 leading-relaxed text-base md:text-lg"
                         >
@@ -281,6 +342,48 @@ const formatearDescripcion = (texto) => {
                                 class="prose max-w-none"
                             ></div>
                         </div>
+                    </div>
+                </div>
+
+                <div
+                    class="mt-12 bg-white rounded-2xl p-8 text-center shadow-sm border border-gray-100"
+                >
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">
+                        {{
+                            viaje.valoracion
+                                ? "¡Gracias por tu valoración!"
+                                : "¿Qué te ha parecido este itinerario?"
+                        }}
+                    </h3>
+                    <p class="text-gray-500 text-sm mb-6">
+                        Ayuda a la IA de VIAJA a mejorar dándole una puntuación
+                        a este viaje.
+                    </p>
+
+                    <div class="flex justify-center gap-2">
+                        <button
+                            v-for="n in 5"
+                            :key="n"
+                            @click="valorar(n)"
+                            @mouseenter="estrellaHover = n"
+                            @mouseleave="estrellaHover = 0"
+                            class="focus:outline-none transition-transform hover:scale-110"
+                        >
+                            <svg
+                                :class="[
+                                    'w-10 h-10 transition-colors duration-200',
+                                    n <= (estrellaHover || viaje.valoracion)
+                                        ? 'text-yellow-400 drop-shadow-sm'
+                                        : 'text-gray-200',
+                                ]"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                            >
+                                <path
+                                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
+                                />
+                            </svg>
+                        </button>
                     </div>
                 </div>
             </div>

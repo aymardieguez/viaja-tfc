@@ -35,7 +35,16 @@ const showingNavigationDropdown = ref(false);
                                 >
                                     Dashboard
                                 </NavLink>
-
+                                <NavLink
+                                    v-if="!$page.props.auth.isAdmin"
+                                    :href="route('viajes.favoritos')"
+                                    :active="
+                                        route().current('viajes.favoritos')
+                                    "
+                                    class="text-red-500 hover:text-red-700 transition-colors"
+                                >
+                                    ❤️Favoritos
+                                </NavLink>
                                 <NavLink
                                     v-if="$page.props.auth.isAdmin"
                                     :href="route('admin.dashboard')"
@@ -149,7 +158,14 @@ const showingNavigationDropdown = ref(false);
                         >
                             Dashboard
                         </ResponsiveNavLink>
-
+                        <ResponsiveNavLink
+                            v-if="!$page.props.auth.isAdmin"
+                            :href="route('viajes.favoritos')"
+                            :active="route().current('viajes.favoritos')"
+                            class="text-red-500 font-medium"
+                        >
+                            ❤️Favoritos
+                        </ResponsiveNavLink>
                         <ResponsiveNavLink
                             v-if="$page.props.auth.isAdmin"
                             :href="route('admin.dashboard')"
