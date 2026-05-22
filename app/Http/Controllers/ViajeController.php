@@ -169,7 +169,13 @@ class ViajeController extends Controller
                 }
             }
         } catch (\Exception $e) {
-            dd("Error de conexión con la API: " . $e->getMessage());
+            // si el error contiene la palabra "demand" o "overloaded"
+            if (str_contains($e->getMessage(), 'demand') || str_contains($e->getMessage(), '429')) {
+                return back()->with('error', 'La IA está experimentando un pico de demanda alta. Por favor, inténtalo de nuevo en un par de minutos.');
+            }
+
+            //error diferente a demanda alta
+            return back()->with('error', 'Hubo un problema de conexión con la IA. Inténtalo de nuevo.');
         }
 
         return redirect()->route('viajes.show', $viaje->id);
