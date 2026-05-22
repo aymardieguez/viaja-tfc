@@ -42,6 +42,9 @@ Route::middleware('auth', 'verified')->group(function () {
     Route::get('/mis-viajes/{viaje}', [ViajeController::class, 'show'])->name('viajes.show');
     Route::delete('/mis-viajes/{viaje}', [ViajeController::class, 'destroy'])->name('viajes.destroy');
     Route::get('/mis-viajes/{viaje}/pdf', [ViajeController::class, 'descargarPdf'])->name('viajes.pdf');
+    Route::get('/mis-favoritos', [ViajeController::class, 'favoritos'])->name('viajes.favoritos');
+    Route::post('/viajes/{viaje}/favorito', [ViajeController::class, 'toggleFavorito'])->name('viajes.favorito.toggle');
+    Route::post('/viajes/{viaje}/valorar', [ViajeController::class, 'valorar'])->name('viajes.valorar');
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {

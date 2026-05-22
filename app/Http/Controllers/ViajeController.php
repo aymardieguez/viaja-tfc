@@ -227,4 +227,38 @@ class ViajeController extends Controller
         $nombreArchivo = 'itinerario-' . \Illuminate\Support\Str::slug($viaje->destino) . '.pdf';
         return $pdf->download($nombreArchivo);
     }
+
+    public function favoritos()
+    {
+        $viajes = Auth::user()->viajes()
+            ->where('favorito', true)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return Inertia::render('Viajes/Favoritos', [
+            'viajes' => $viajes
+        ]);
+    }
+
+    public function toggleFavorito(Request $request, $id)
+    {
+        $viaje = Auth::user()->viajes()->findOrFail($id);
+        $viaje->favorito = !$viaje->favorito;
+        $viaje->save();
+
+        return redirect()->back();
+    }
+
+    public function valorar(Request $request, $id)
+    {
+        $request->validate([
+            'valoracion' => 'required|integer|min:1|max:5'
+        ]);
+
+        $viaje = Auth::user()->viajes()->findOrFail($id);
+        $viaje->valoracion = $request->valoracion;
+        $viaje->save();
+
+        return redirect()->back();
+    }
 }

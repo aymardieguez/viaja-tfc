@@ -20,6 +20,8 @@ class Viaje extends Model
         'mes',
         'rango_edad',
         'modo_pro',
+        'favorito',
+        'valoracion',
     ];
 
     protected $casts = [
@@ -27,6 +29,8 @@ class Viaje extends Model
         'favorito' => 'boolean',
         'intereses' => 'array',
         'imagenes' => 'array',
+        'favorito' => 'boolean',
+        'valoracion' => 'integer',
     ];
 
     public function user()
