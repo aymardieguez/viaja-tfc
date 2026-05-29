@@ -29,7 +29,6 @@ const rangosEdad = [
     "Familia con niños",
     "Familia con adolescentes",
 ];
-
 const listaNecesidades = [
     "Sin Gluten (Celíaco)",
     "Vegetariano",
@@ -52,6 +51,54 @@ const form = useForm({
     filtros: [],
     filtros_extra: "",
 });
+
+//autocompletado(API Nominatim - OpenStreetMap)
+const sugerencias = ref([]);
+const mostrarSugerencias = ref(false);
+const buscandoDestino = ref(false);
+let timeoutId = null;
+
+const buscarSugerencias = () => {
+    clearTimeout(timeoutId);
+
+    if (form.destino.trim().length < 3) {
+        sugerencias.value = [];
+        mostrarSugerencias.value = false;
+        return;
+    }
+
+    timeoutId = setTimeout(async () => {
+        buscandoDestino.value = true;
+        mostrarSugerencias.value = true;
+
+        try {
+            const query = encodeURIComponent(form.destino);
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=5&accept-language=es`,
+            );
+            const data = await response.json();
+            sugerencias.value = data;
+        } catch (error) {
+            console.error("Error buscando destinos:", error);
+        } finally {
+            buscandoDestino.value = false;
+        }
+    }, 500); //llamamos tras medio segundo desde que el usuario deja de escribir, para no saturar la API
+};
+
+const seleccionarDestino = (lugar) => {
+    // cortamos nombre destino para que no sea demasiado largo
+    const partes = lugar.display_name.split(",");
+    form.destino = partes.slice(0, 3).join(",").trim();
+    sugerencias.value = [];
+    mostrarSugerencias.value = false;
+};
+
+const ocultarSugerencias = () => {
+    setTimeout(() => {
+        mostrarSugerencias.value = false;
+    }, 200);
+};
 
 watch(
     [cantidadInput, tipoPresupuesto, () => form.personas],
@@ -144,7 +191,7 @@ const submit = () => {
                 >
                     <form @submit.prevent="submit" class="space-y-6">
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div class="md:col-span-2">
+                            <div class="md:col-span-2 relative">
                                 <label
                                     class="block text-sm font-medium text-gray-700"
                                 >
@@ -152,9 +199,16 @@ const submit = () => {
                                 </label>
                                 <input
                                     v-model="form.destino"
+                                    @input="buscarSugerencias"
+                                    @focus="
+                                        if (sugerencias.length > 0)
+                                            mostrarSugerencias = true;
+                                    "
+                                    @blur="ocultarSugerencias"
                                     type="text"
                                     required
                                     placeholder="Ej: Roma, Italia"
+                                    autocomplete="off"
                                     :class="[
                                         'mt-1 block w-full rounded-md shadow-sm',
                                         form.errors.destino
@@ -162,6 +216,71 @@ const submit = () => {
                                             : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500',
                                     ]"
                                 />
+
+                                <ul
+                                    v-if="
+                                        mostrarSugerencias &&
+                                        form.destino.length >= 3
+                                    "
+                                    class="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto"
+                                >
+                                    <li
+                                        v-if="buscandoDestino"
+                                        class="p-3 text-sm text-gray-500 text-center flex justify-center items-center gap-2"
+                                    >
+                                        <svg
+                                            class="animate-spin h-4 w-4 text-blue-500"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <circle
+                                                class="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                stroke-width="4"
+                                            ></circle>
+                                            <path
+                                                class="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                            ></path>
+                                        </svg>
+                                        Buscando...
+                                    </li>
+
+                                    <template v-else>
+                                        <li
+                                            v-for="lugar in sugerencias"
+                                            :key="lugar.place_id"
+                                            @mousedown.prevent="
+                                                seleccionarDestino(lugar)
+                                            "
+                                            class="p-3 hover:bg-blue-50 cursor-pointer border-b last:border-b-0 flex items-start gap-2 transition-colors"
+                                        >
+                                            <span class="text-blue-500 mt-0.5"
+                                                >📍</span
+                                            >
+                                            <span class="text-sm text-gray-700">
+                                                {{
+                                                    lugar.display_name
+                                                        .split(",")
+                                                        .slice(0, 3)
+                                                        .join(",")
+                                                }}
+                                            </span>
+                                        </li>
+                                        <li
+                                            v-if="sugerencias.length === 0"
+                                            class="p-3 text-sm text-gray-500 text-center"
+                                        >
+                                            No se encontraron resultados
+                                        </li>
+                                    </template>
+                                </ul>
+
                                 <p
                                     v-if="form.errors.destino"
                                     class="mt-2 text-sm font-bold text-red-600 flex items-center gap-1"
@@ -184,9 +303,8 @@ const submit = () => {
                             <div>
                                 <label
                                     class="block text-sm font-medium text-gray-700"
+                                    >Mes del viaje</label
                                 >
-                                    Mes del viaje
-                                </label>
                                 <select
                                     v-model="form.mes"
                                     required
@@ -251,7 +369,6 @@ const submit = () => {
                                     class="block text-sm font-medium text-gray-700 mb-2"
                                     >Presupuesto (€)</label
                                 >
-
                                 <div
                                     class="inline-flex bg-gray-100 p-1 rounded-md mb-2 w-fit"
                                 >
@@ -280,7 +397,6 @@ const submit = () => {
                                         Por persona
                                     </button>
                                 </div>
-
                                 <input
                                     v-model="cantidadInput"
                                     type="number"
@@ -292,7 +408,6 @@ const submit = () => {
                                     "
                                     class="mt-auto block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500"
                                 />
-
                                 <div class="h-5 mt-1">
                                     <p
                                         v-if="
@@ -306,7 +421,6 @@ const submit = () => {
                                     </p>
                                 </div>
                             </div>
-
                             <div class="flex flex-col">
                                 <label
                                     class="block text-sm font-medium text-gray-700 mb-2"
@@ -385,7 +499,6 @@ const submit = () => {
                                     >
                                 </div>
                             </div>
-
                             <div class="border-t pt-4">
                                 <h3
                                     class="text-sm font-bold text-gray-700 mb-3"
