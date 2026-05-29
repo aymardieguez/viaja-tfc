@@ -6,7 +6,7 @@ import { ref, watch } from "vue";
 const mostrarFiltros = ref(false);
 
 const tipoPresupuesto = ref("total");
-const cantidadInput = ref("");
+const cantidadInput = ref("1000");
 
 const meses = [
     "Enero",
@@ -41,7 +41,7 @@ const listaNecesidades = [
 
 const form = useForm({
     destino: "",
-    presupuesto: "",
+    presupuesto: 1000,
     noches: 3,
     personas: 2,
     mes: "",
@@ -110,6 +110,7 @@ watch(
             form.presupuesto = cantidad;
         }
     },
+    { immediate: true },
 );
 
 const submit = () => {
@@ -397,17 +398,34 @@ const submit = () => {
                                         Por persona
                                     </button>
                                 </div>
-                                <input
-                                    v-model="cantidadInput"
-                                    type="number"
-                                    required
-                                    :placeholder="
-                                        tipoPresupuesto === 'total'
-                                            ? 'Ej: 1000'
-                                            : 'Ej: 500'
-                                    "
-                                    class="mt-auto block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500"
-                                />
+                                <div class="mt-2 relative">
+                                    <div
+                                        class="flex justify-between items-center mb-1"
+                                    >
+                                        <span
+                                            class="text-xs text-gray-400 font-bold"
+                                            >50 €</span
+                                        >
+                                        <span
+                                            class="text-xl text-blue-600 font-black"
+                                        >
+                                            {{ cantidadInput }} €
+                                        </span>
+                                        <span
+                                            class="text-xs text-gray-400 font-bold"
+                                            >10.000 €</span
+                                        >
+                                    </div>
+                                    <input
+                                        v-model="cantidadInput"
+                                        type="range"
+                                        min="50"
+                                        max="10000"
+                                        step="50"
+                                        class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                </div>
+
                                 <div class="h-5 mt-1">
                                     <p
                                         v-if="
@@ -416,7 +434,7 @@ const submit = () => {
                                         "
                                         class="text-xs text-blue-600 font-medium"
                                     >
-                                        Total calculado:
+                                        Presupuesto total calculado:
                                         {{ form.presupuesto }} €
                                     </p>
                                 </div>
