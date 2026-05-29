@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Notifications\Messages\MailMessage;
 
@@ -32,5 +33,8 @@ class AppServiceProvider extends ServiceProvider
                 ->line('Si no creaste esta cuenta, no es necesario realizar ninguna acción.')
                 ->salutation('Un saludo, el equipo de Viaja');
         });
+        if (str_contains(request()->url(), 'ngrok')) {
+            URL::forceScheme('https');
+        }
     }
 }

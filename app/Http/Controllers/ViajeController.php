@@ -41,63 +41,34 @@ class ViajeController extends Controller
             $arrayFiltros[] = $validated['filtros_extra'];
         }
 
-        $urlsImagenes = [];
-        try {
-            $unsplashResponse = Http::get('https://api.unsplash.com/search/photos', [
-                'client_id' => env('UNSPLASH_ACCESS_KEY'),
-                'query' => $validated['destino'],
-                'per_page' => 3,
-                'orientation' => 'landscape'
-            ]);
-
-            if ($unsplashResponse->successful()) {
-                $resultados = $unsplashResponse->json()['results'];
-                foreach ($resultados as $foto) {
-                    $urlsImagenes[] = $foto['urls']['regular'];
-                }
-            }
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::warning('Fallo en la API de Unsplash: ' . $e->getMessage());
-        }
-
-        $viaje = Auth::user()->viajes()->create([
-            'titulo' => 'Viaje a ' . $validated['destino'],
-            'destino' => $validated['destino'],
-            'presupuesto' => $validated['presupuesto'],
-            'noches' => $validated['noches'],
-            'personas' => $validated['personas'],
-            'mes' => $validated['mes'],
-            'rango_edad' => $validated['rango_edad'],
-            'modo_pro' => $validated['modo_pro'] ?? false,
-            'intereses' => $validated['intereses'] ?? null,
-            'filtros_ia' => empty($arrayFiltros) ? null : $arrayFiltros,
-            'imagenes' => $urlsImagenes,
-        ]);
-
         $motorIA = (isset($validated['modo_pro']) && $validated['modo_pro'])
             ? 'gemini-3-flash-preview'
             : 'gemini-2.5-flash';
 
-        $prompt = "Eres un experto agente de viajes de la plataforma VIAJA. El usuario quiere viajar a '{$validated['destino']}'.
+        $prompt = "Eres un agente de viajes estricto de la plataforma VIAJA. El usuario solicita un viaje a: '{$validated['destino']}'.
 
-        REGLA DE SEGURIDAD CRÍTICA: Tu primera tarea es evaluar si '{$validated['destino']}' es un lugar geográfico real, turístico y visitable. Si el usuario ha introducido una persona, un objeto, una marca, un lugar ficticio o algo absurdo, DEBES detenerte inmediatamente y responder ÚNICAMENTE con este JSON exacto:
-[
-    {
-        \"error_validacion\": \"El destino introducido no es un lugar geográfico válido.\"
-    }
-]
+        REGLA DE SEGURIDAD CRÍTICA Y ABSOLUTA:
+        Analiza literalmente la palabra '{$validated['destino']}'. ¿Es directamente el nombre de una ciudad, país, pueblo o accidente geográfico real?
+        Si el usuario ha escrito el nombre de una persona (ej. Messi, Ronaldo, Batman), un objeto, una marca, o algo que NO es un destino geográfico por sí mismo, ESTÁ TOTALMENTE PROHIBIDO deducir su ciudad natal o buscar un lugar relacionado. No seas 'servicial'. Debes abortar inmediatamente y devolver ÚNICAMENTE este JSON:
+        [
+            {
+                \"error_validacion\": \"El destino no es válido\"
+            }
+        ]
 
-Si el lugar SÍ es válido, ignora la regla anterior y genera el itinerario en el siguiente formato JSON: " . "Actúa como un guía turístico local EXPERTO y ESTRICTAMENTE PRECISO de {$validated['destino']}.
-Crea un itinerario de {$validated['noches']} noches para {$validated['personas']} personas.
-Mes: {$validated['mes']} | Presupuesto: {$validated['presupuesto']}€.
+        Si '{$validated['destino']}' SÍ es un lugar geográfico válido, ignora la regla anterior y genera el itinerario en el siguiente formato JSON:
+        
+        Actúa como un guía turístico local EXPERTO y ESTRICTAMENTE PRECISO de {$validated['destino']}.
+        Crea un itinerario de {$validated['noches']} noches para {$validated['personas']} personas.
+        Mes: {$validated['mes']} | Presupuesto: {$validated['presupuesto']}€.
 
-REGLAS INQUEBRANTABLES:
-1. GEOGRAFÍA EXACTA: Verifica mentalmente la ubicación exacta de {$validated['destino']}. NO mezcles lugares de otras provincias.
-2. CERO INVENCIONES: Solo nombres de restaurantes, hoteles y lugares 100% REALES. Si no conoces locales en esa zona, escribe 'Elección libre por la zona'. PROHIBIDO inventar nombres.
-3. FORMATO DIARIO: Describe cada día usando estrictamente estas etiquetas:
-☀️ MAÑANA:
-🌇 TARDE:
-🌙 NOCHE:\n";
+        REGLAS INQUEBRANTABLES:
+        1. GEOGRAFÍA EXACTA: Verifica mentalmente la ubicación exacta de {$validated['destino']}. NO mezcles lugares de otras provincias.
+        2. CERO INVENCIONES: Solo nombres de restaurantes, hoteles y lugares 100% REALES. Si no conoces locales en esa zona, escribe 'Elección libre por la zona'. PROHIBIDO inventar nombres.
+        3. FORMATO DIARIO: Describe cada día usando estrictamente estas etiquetas:
+        ☀️ MAÑANA:
+        🌇 TARDE:
+        🌙 NOCHE:\n";
 
         if (!empty($arrayFiltros)) {
             $filtrosTexto = implode(", ", $arrayFiltros);
@@ -168,6 +139,52 @@ REGLAS INQUEBRANTABLES:
                 ]);
             }
 
+            $esError = false;
+            if (isset($diasGenerados['error_validacion']) || isset($diasGenerados[0]['error_validacion'])) {
+                $esError = true;
+            }
+
+            if ($esError) {
+                return back()->withErrors([
+                    'destino' => 'El destino no es válido. Por favor, introduce una ciudad, país o región real.'
+                ])->withInput();
+            }
+
+           //si no hay errores cogemos las imágenes de Unsplash
+            $urlsImagenes = [];
+            try {
+                $unsplashResponse = Http::get('https://api.unsplash.com/search/photos', [
+                    'client_id' => env('UNSPLASH_ACCESS_KEY'),
+                    'query' => $validated['destino'],
+                    'per_page' => 3,
+                    'orientation' => 'landscape'
+                ]);
+
+                if ($unsplashResponse->successful()) {
+                    $resultados = $unsplashResponse->json()['results'];
+                    foreach ($resultados as $foto) {
+                        $urlsImagenes[] = $foto['urls']['regular'];
+                    }
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning('Fallo en la API de Unsplash: ' . $e->getMessage());
+            }
+
+            //creamos viaje y guardamos en base de datos
+            $viaje = Auth::user()->viajes()->create([
+                'titulo' => 'Viaje a ' . $validated['destino'],
+                'destino' => $validated['destino'],
+                'presupuesto' => $validated['presupuesto'],
+                'noches' => $validated['noches'],
+                'personas' => $validated['personas'],
+                'mes' => $validated['mes'],
+                'rango_edad' => $validated['rango_edad'],
+                'modo_pro' => $validated['modo_pro'] ?? false,
+                'intereses' => $validated['intereses'] ?? null,
+                'filtros_ia' => empty($arrayFiltros) ? null : $arrayFiltros,
+                'imagenes' => $urlsImagenes,
+            ]);
+
             if (is_array($diasGenerados)) {
                 foreach ($diasGenerados as $dia) {
                     $viaje->dias()->create([
@@ -177,17 +194,17 @@ REGLAS INQUEBRANTABLES:
                     ]);
                 }
             }
+
+            return redirect()->route('viajes.show', $viaje->id);
         } catch (\Exception $e) {
             // si el error contiene la palabra "demand" o "overloaded"
             if (str_contains($e->getMessage(), 'demand') || str_contains($e->getMessage(), '429')) {
                 return back()->with('error', 'La IA está experimentando un pico de demanda alta. Por favor, inténtalo de nuevo en un par de minutos.');
             }
 
-            //error diferente a demanda alta
+            // error diferente a demanda alta
             return back()->with('error', 'Hubo un problema de conexión con la IA. Inténtalo de nuevo.');
         }
-
-        return redirect()->route('viajes.show', $viaje->id);
     }
 
     public function show($id)
@@ -205,13 +222,14 @@ REGLAS INQUEBRANTABLES:
 
     public function enlaceCompartirViaje($id)
     {
-        //el enlace es público, no hace falta estar logueado
+        // el enlace es público, no hace falta estar logueado
         $viaje = \App\Models\Viaje::with('dias')->findOrFail($id);
 
         return Inertia::render('Viajes/Public', [
             'viaje' => $viaje
         ]);
     }
+
     public function destroy($id)
     {
         $viaje = \Illuminate\Support\Facades\Auth::user()->viajes()->findOrFail($id);
