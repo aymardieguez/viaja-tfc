@@ -11,6 +11,7 @@ use Gemini\Enums\ResponseMimeType;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Cache;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
 
@@ -106,38 +107,42 @@ class ViajeController extends Controller
         ]";
 
         try {
-            $respuestaGemini = Gemini::generativeModel($motorIA)
-                ->withGenerationConfig(
-                    new GenerationConfig(
-                        responseMimeType: ResponseMimeType::APPLICATION_JSON,
+            $cacheIA = 'viaje_ia_' . md5(json_encode($validated));
+            $textoLimpiado = Cache::remember($cacheIA, 86400, function () use ($motorIA, $prompt) {
+                $respuestaGemini = Gemini::generativeModel($motorIA)
+                    ->withGenerationConfig(
+                        new GenerationConfig(
+                            responseMimeType: ResponseMimeType::APPLICATION_JSON,
+                        )
                     )
-                )
-                ->generateContent($prompt);
+                    ->generateContent($prompt);
 
-            $textoRaw = $respuestaGemini->text();
-            $textoLimpiado = str_replace(['```json', '```'], '', $textoRaw);
-            $inicio = strpos($textoLimpiado, '[');
-            preg_match('/\}\s*\]/', $textoLimpiado, $coincidencias, PREG_OFFSET_CAPTURE);
+                $textoRaw = $respuestaGemini->text();
+                $textoProcesado = str_replace(['```json', '```'], '', $textoRaw);
 
-            if ($inicio !== false && !empty($coincidencias)) {
-                $fin = $coincidencias[0][1] + strlen($coincidencias[0][0]) - 1;
-                $textoLimpiado = substr($textoLimpiado, $inicio, $fin - $inicio + 1);
-            } else {
-                $fin = strrpos($textoLimpiado, ']');
-                if ($inicio !== false && $fin !== false) {
-                    $textoLimpiado = substr($textoLimpiado, $inicio, $fin - $inicio + 1);
+                $inicio = strpos($textoProcesado, '[');
+                preg_match('/\}\s*\]/', $textoProcesado, $coincidencias, PREG_OFFSET_CAPTURE);
+
+                if ($inicio !== false && !empty($coincidencias)) {
+                    $fin = $coincidencias[0][1] + strlen($coincidencias[0][0]) - 1;
+                    $textoProcesado = substr($textoProcesado, $inicio, $fin - $inicio + 1);
+                } else {
+                    $fin = strrpos($textoProcesado, ']');
+                    if ($inicio !== false && $fin !== false) {
+                        $textoProcesado = substr($textoProcesado, $inicio, $fin - $inicio + 1);
+                    }
                 }
-            }
+
+                //si la IA devuelve un JSON roto, lanzamos excepción para que Redis no lo guarde
+                json_decode($textoProcesado, true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    throw new \Exception("JSON devuelto por la IA es inválido.");
+                }
+
+                return $textoProcesado;
+            });
 
             $diasGenerados = json_decode($textoLimpiado, true);
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                dd([
-                    'Error JSON' => json_last_error_msg(),
-                    'Lo que envió la IA' => $textoRaw,
-                    'Lo que recortó PHP' => $textoLimpiado
-                ]);
-            }
 
             $esError = false;
             if (isset($diasGenerados['error_validacion']) || isset($diasGenerados[0]['error_validacion'])) {
@@ -151,25 +156,29 @@ class ViajeController extends Controller
             }
 
             //si no hay errores cogemos las imágenes de Unsplash
-            $urlsImagenes = [];
-            try {
-                $busqueda = trim(explode(',', $validated['destino'])[0]);
-                $unsplashResponse = Http::get('https://api.unsplash.com/search/photos', [
-                    'client_id' => env('UNSPLASH_ACCESS_KEY'),
-                    'query' => $busqueda,
-                    'per_page' => 3,
-                    'orientation' => 'landscape'
-                ]);
+            $busqueda = trim(explode(',', $validated['destino'])[0]);
+            $cacheUnsplash = 'unsplash_fotos_' . Str::slug($busqueda);
+            $urlsImagenes = Cache::remember($cacheUnsplash, (86400 * 7), function () use ($busqueda) {
+                $urls = [];
+                try {
+                    $unsplashResponse = Http::get('https://api.unsplash.com/search/photos', [
+                        'client_id' => env('UNSPLASH_ACCESS_KEY'),
+                        'query' => $busqueda,
+                        'per_page' => 3,
+                        'orientation' => 'landscape'
+                    ]);
 
-                if ($unsplashResponse->successful()) {
-                    $resultados = $unsplashResponse->json()['results'];
-                    foreach ($resultados as $foto) {
-                        $urlsImagenes[] = $foto['urls']['regular'];
+                    if ($unsplashResponse->successful()) {
+                        $resultados = $unsplashResponse->json()['results'];
+                        foreach ($resultados as $foto) {
+                            $urls[] = $foto['urls']['regular'];
+                        }
                     }
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning('Fallo en la API de Unsplash: ' . $e->getMessage());
                 }
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::warning('Fallo en la API de Unsplash: ' . $e->getMessage());
-            }
+                return $urls;
+            });
 
             //creamos viaje y guardamos en base de datos
             $viaje = Auth::user()->viajes()->create([
