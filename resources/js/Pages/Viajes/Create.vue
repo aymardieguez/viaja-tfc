@@ -130,7 +130,7 @@ const submit = () => {
 
         <div
             v-if="form.processing"
-            class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gray-900 bg-opacity-80 backdrop-blur-sm text-white"
+            class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gray-900 bg-opacity-80 backdrop-blur-sm text-white px-6 text-center"
         >
             <svg
                 class="animate-spin h-16 w-16 text-blue-500 mb-4"
@@ -155,9 +155,11 @@ const submit = () => {
             <h2 class="text-2xl font-bold animate-pulse">
                 Se está creando tu viaje...
             </h2>
-            <p class="mt-2 text-gray-300">
+            <p class="mt-3 text-gray-300 max-w-md mx-auto leading-relaxed">
                 Esto puede tardar hasta dos minutos. Buscando los mejores sitios
-                en {{ form.destino }}...
+                en
+                <span class="font-semibold text-white">{{ form.destino }}</span
+                >...
             </p>
         </div>
 

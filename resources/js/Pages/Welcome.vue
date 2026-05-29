@@ -48,7 +48,7 @@ defineProps({
                 class="mt-4 text-xl md:text-2xl text-gray-200 mb-10 drop-shadow-md"
             >
                 Crea itinerarios hiper-personalizados en segundos. Tú eliges el
-                destino, nuestras IA hace la magia adaptándose a tus
+                destino, nuestra IA hace la magia adaptándose a tus
                 necesidades.
             </p>
 
