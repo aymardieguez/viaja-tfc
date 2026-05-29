@@ -150,12 +150,13 @@ class ViajeController extends Controller
                 ])->withInput();
             }
 
-           //si no hay errores cogemos las imágenes de Unsplash
+            //si no hay errores cogemos las imágenes de Unsplash
             $urlsImagenes = [];
             try {
+                $busqueda = trim(explode(',', $validated['destino'])[0]);
                 $unsplashResponse = Http::get('https://api.unsplash.com/search/photos', [
                     'client_id' => env('UNSPLASH_ACCESS_KEY'),
-                    'query' => $validated['destino'],
+                    'query' => $busqueda,
                     'per_page' => 3,
                     'orientation' => 'landscape'
                 ]);
