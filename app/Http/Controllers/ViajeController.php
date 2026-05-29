@@ -78,17 +78,26 @@ class ViajeController extends Controller
             ? 'gemini-3-flash-preview'
             : 'gemini-2.5-flash';
 
-        $prompt = "Actúa como un guía turístico local EXPERTO y ESTRICTAMENTE PRECISO de {$validated['destino']}.
-        Crea un itinerario de {$validated['noches']} noches para {$validated['personas']} personas.
-        Mes: {$validated['mes']} | Presupuesto: {$validated['presupuesto']}€.
+        $prompt = "Eres un experto agente de viajes de la plataforma VIAJA. El usuario quiere viajar a '{$validated['destino']}'.
 
-        REGLAS INQUEBRANTABLES:
-        1. GEOGRAFÍA EXACTA: Verifica mentalmente la ubicación exacta de {$validated['destino']}. NO mezcles lugares de otras provincias.
-        2. CERO INVENCIONES: Solo nombres de restaurantes, hoteles y lugares 100% REALES. Si no conoces locales en esa zona, escribe 'Elección libre por la zona'. PROHIBIDO inventar nombres.
-        3. FORMATO DIARIO: Describe cada día usando estrictamente estas etiquetas:
-        ☀️ MAÑANA:
-        🌇 TARDE:
-        🌙 NOCHE:\n";
+        REGLA DE SEGURIDAD CRÍTICA: Tu primera tarea es evaluar si '{$validated['destino']}' es un lugar geográfico real, turístico y visitable. Si el usuario ha introducido una persona, un objeto, una marca, un lugar ficticio o algo absurdo, DEBES detenerte inmediatamente y responder ÚNICAMENTE con este JSON exacto:
+[
+    {
+        \"error_validacion\": \"El destino introducido no es un lugar geográfico válido.\"
+    }
+]
+
+Si el lugar SÍ es válido, ignora la regla anterior y genera el itinerario en el siguiente formato JSON: " . "Actúa como un guía turístico local EXPERTO y ESTRICTAMENTE PRECISO de {$validated['destino']}.
+Crea un itinerario de {$validated['noches']} noches para {$validated['personas']} personas.
+Mes: {$validated['mes']} | Presupuesto: {$validated['presupuesto']}€.
+
+REGLAS INQUEBRANTABLES:
+1. GEOGRAFÍA EXACTA: Verifica mentalmente la ubicación exacta de {$validated['destino']}. NO mezcles lugares de otras provincias.
+2. CERO INVENCIONES: Solo nombres de restaurantes, hoteles y lugares 100% REALES. Si no conoces locales en esa zona, escribe 'Elección libre por la zona'. PROHIBIDO inventar nombres.
+3. FORMATO DIARIO: Describe cada día usando estrictamente estas etiquetas:
+☀️ MAÑANA:
+🌇 TARDE:
+🌙 NOCHE:\n";
 
         if (!empty($arrayFiltros)) {
             $filtrosTexto = implode(", ", $arrayFiltros);
