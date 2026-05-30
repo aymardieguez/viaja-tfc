@@ -57,13 +57,16 @@ class AdminController extends Controller
     }
     public function destroyUser(User $user)
     {
-        //un admin no puede autoeliminarse
         if (auth()->id() === $user->id) {
-            return back();
+            return back()->with('error', 'No puedes eliminar tu propia cuenta desde el panel de administración.');
+        }
+
+        if ($user->id === 1) {
+            return back()->with('error', 'La cuenta del administrador principal no puede ser eliminada.');
         }
 
         $user->delete();
-        return back(); //recarga la página
+        return back()->with('success', 'Usuario eliminado correctamente.');
     }
 
     public function destroyViaje(Viaje $viaje)
@@ -76,11 +79,14 @@ class AdminController extends Controller
     {
         // evitar que un admin se quite el rol a sí mismo
         if (auth()->id() === $user->id) {
-            return back();
+            return back()->with('error', 'No puedes modificar tus propios permisos.');
+        }
+
+        if ($user->id === 1) {
+            return back()->with('error', 'El administrador principal no puede ser modificado.');
         }
 
         if ($user->role_id === 1) {
-            // exigimos que el admin introduzca su propia contraseña
             $request->validate([
                 'password' => ['required', 'current_password'],
             ], [
@@ -89,10 +95,11 @@ class AdminController extends Controller
             ]);
 
             $user->update(['role_id' => 2]);
-        } else {
-            $user->update(['role_id' => 1]);
+            return back()->with('success', 'Permisos de administrador retirados.');
         }
-
-        return back();
+        else {
+            $user->update(['role_id' => 1]);
+            return back()->with('success', 'Usuario promovido a administrador.');
+        }
     }
 }

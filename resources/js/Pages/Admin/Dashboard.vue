@@ -1,8 +1,8 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import { Head, Link, router, useForm } from "@inertiajs/vue3";
+import { Head, Link, router, useForm, usePage } from "@inertiajs/vue3";
 import ConfirmModal from "@/Components/ConfirmModal.vue";
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { Bar } from "vue-chartjs";
 import {
     Chart as ChartJS,
@@ -29,8 +29,10 @@ const props = defineProps({
     chartData: Array,
 });
 
-// Configuración de la gráfica de barras
+const page = usePage();
+const authUserId = computed(() => page.props.auth.user.id);
 
+// Configuración de la gráfica de barras
 const dataGrafica = {
     labels: props.chartData.map((d) => d.mes),
     datasets: [
@@ -45,9 +47,30 @@ const dataGrafica = {
 const mostrarModalUsuario = ref(false);
 const usuarioIdSeleccionado = ref(null);
 
-// Funciones para manejo de borrado de usuario
-const confirmarBorradoUsuario = (id) => {
-    usuarioIdSeleccionado.value = id;
+const mostrarModalPassword = ref(false);
+const usuarioRolSeleccionado = ref(null);
+const formRol = useForm({ password: "" });
+
+// Alertas informativas
+const mostrarModalAlerta = ref(false);
+const mensajeAlerta = ref("");
+
+const confirmarBorradoUsuario = (user) => {
+    if (user.id === authUserId.value) {
+        mensajeAlerta.value =
+            "No puedes eliminar tu propia cuenta desde el panel de administración. Ve a tu perfil si deseas darte de baja.";
+        mostrarModalAlerta.value = true;
+        return;
+    }
+
+    if (user.id === 1) {
+        mensajeAlerta.value =
+            "La cuenta del administrador principal del sistema no puede ser eliminada.";
+        mostrarModalAlerta.value = true;
+        return;
+    }
+
+    usuarioIdSeleccionado.value = user.id;
     mostrarModalUsuario.value = true;
 };
 
@@ -71,18 +94,22 @@ const ejecutarBorradoUsuario = () => {
     }
 };
 
-// Funciones para manejo de cambio de rol
-
-const formRol = useForm({
-    password: "",
-});
-
-const mostrarModalPassword = ref(false);
-const usuarioRolSeleccionado = ref(null);
-
 const intentarCambiarRol = (user) => {
+    if (user.id === authUserId.value) {
+        mensajeAlerta.value =
+            "No puedes modificar tus propios permisos de administrador por motivos de seguridad.";
+        mostrarModalAlerta.value = true;
+        return;
+    }
+
+    if (user.id === 1) {
+        mensajeAlerta.value =
+            "Los privilegios del administrador principal no pueden ser modificados.";
+        mostrarModalAlerta.value = true;
+        return;
+    }
+
     if (user.role_id === 1) {
-        // Si ya es admin y le queremos quitar el rol pedimos contraseña
         usuarioRolSeleccionado.value = user;
         formRol.clearErrors();
         formRol.password = "";
@@ -111,6 +138,11 @@ const cancelarDegradacion = () => {
     mostrarModalPassword.value = false;
     formRol.reset();
     formRol.clearErrors();
+};
+
+const cerrarAlerta = () => {
+    mostrarModalAlerta.value = false;
+    mensajeAlerta.value = "";
 };
 </script>
 
@@ -218,6 +250,20 @@ const cancelarDegradacion = () => {
                         <h3 class="font-bold text-gray-700 mb-4">
                             Gestión de Usuarios
                         </h3>
+
+                        <div
+                            v-if="$page.props.flash?.error"
+                            class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm"
+                        >
+                            {{ $page.props.flash.error }}
+                        </div>
+                        <div
+                            v-if="$page.props.flash?.success"
+                            class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg text-sm"
+                        >
+                            {{ $page.props.flash.success }}
+                        </div>
+
                         <div class="overflow-x-auto w-full">
                             <table class="min-w-full text-sm whitespace-nowrap">
                                 <thead class="bg-gray-50">
@@ -270,6 +316,7 @@ const cancelarDegradacion = () => {
 
                                         <td class="px-4 py-2 text-center">
                                             <div
+                                                v-if="user.id !== 1"
                                                 class="flex items-center justify-center space-x-4"
                                             >
                                                 <button
@@ -306,7 +353,7 @@ const cancelarDegradacion = () => {
                                                 <button
                                                     @click="
                                                         confirmarBorradoUsuario(
-                                                            user.id,
+                                                            user,
                                                         )
                                                     "
                                                     type="button"
@@ -315,6 +362,11 @@ const cancelarDegradacion = () => {
                                                     Eliminar
                                                 </button>
                                             </div>
+                                            <span
+                                                v-else
+                                                class="text-gray-300 font-bold"
+                                                >-</span
+                                            >
                                         </td>
                                     </tr>
                                 </tbody>
@@ -372,6 +424,37 @@ const cancelarDegradacion = () => {
             >
                 {{ formRol.errors.password }}
             </p>
+        </ConfirmModal>
+
+        <ConfirmModal
+            :show="mostrarModalAlerta"
+            title="Acción no permitida"
+            :message="mensajeAlerta"
+            confirmText="Entendido"
+            confirmColor="bg-gray-800 hover:bg-gray-900 shadow-gray-200"
+            iconColor="text-gray-600 bg-gray-100"
+            @close="cerrarAlerta"
+            @confirm="cerrarAlerta"
+        >
+            <template #icon>
+                <div
+                    class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gray-100 mb-6"
+                >
+                    <svg
+                        class="h-8 w-8 text-gray-600"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                    </svg>
+                </div>
+            </template>
         </ConfirmModal>
     </AuthenticatedLayout>
 </template>
