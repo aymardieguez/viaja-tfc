@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import { Head, Link, router } from "@inertiajs/vue3";
+import { Head, Link, router, useForm } from "@inertiajs/vue3";
 import ConfirmModal from "@/Components/ConfirmModal.vue";
 import { ref } from "vue";
 import { Bar } from "vue-chartjs";
@@ -29,6 +29,8 @@ const props = defineProps({
     chartData: Array,
 });
 
+// Configuración de la gráfica de barras
+
 const dataGrafica = {
     labels: props.chartData.map((d) => d.mes),
     datasets: [
@@ -43,6 +45,7 @@ const dataGrafica = {
 const mostrarModalUsuario = ref(false);
 const usuarioIdSeleccionado = ref(null);
 
+// Funciones para manejo de borrado de usuario
 const confirmarBorradoUsuario = (id) => {
     usuarioIdSeleccionado.value = id;
     mostrarModalUsuario.value = true;
@@ -67,6 +70,48 @@ const ejecutarBorradoUsuario = () => {
         );
     }
 };
+
+// Funciones para manejo de cambio de rol
+
+const formRol = useForm({
+    password: "",
+});
+
+const mostrarModalPassword = ref(false);
+const usuarioRolSeleccionado = ref(null);
+
+const intentarCambiarRol = (user) => {
+    if (user.role_id === 1) {
+        // Si ya es admin y le queremos quitar el rol pedimos contraseña
+        usuarioRolSeleccionado.value = user;
+        formRol.clearErrors();
+        formRol.password = "";
+        mostrarModalPassword.value = true;
+    } else {
+        formRol.patch(route("admin.usuarios.cambiarRol", user.id), {
+            preserveScroll: true,
+        });
+    }
+};
+
+const confirmarDegradacion = () => {
+    formRol.patch(
+        route("admin.usuarios.cambiarRol", usuarioRolSeleccionado.value.id),
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                mostrarModalPassword.value = false;
+                formRol.reset();
+            },
+        },
+    );
+};
+
+const cancelarDegradacion = () => {
+    mostrarModalPassword.value = false;
+    formRol.reset();
+    formRol.clearErrors();
+};
 </script>
 
 <template>
@@ -80,61 +125,72 @@ const ejecutarBorradoUsuario = () => {
 
         <div class="py-12 bg-gray-100 min-h-screen">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-                <div
-                    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
-                >
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                     <div
-                        class="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500"
+                        class="bg-white p-4 sm:p-6 rounded-lg shadow border-l-4 border-blue-500 flex flex-col justify-center"
                     >
-                        <p class="text-gray-500 text-sm font-bold uppercase">
-                            Usuarios Registrados
+                        <p
+                            class="text-gray-500 text-[10px] sm:text-sm font-bold uppercase truncate"
+                        >
+                            Usuarios
                         </p>
-                        <p class="text-3xl font-black">
+                        <p class="text-2xl sm:text-3xl font-black">
                             {{ stats.total_usuarios }}
                         </p>
                     </div>
 
                     <div
-                        class="bg-white p-6 rounded-lg shadow border-l-4 border-purple-500"
+                        class="bg-white p-4 sm:p-6 rounded-lg shadow border-l-4 border-purple-500 flex flex-col justify-center"
                     >
-                        <p class="text-gray-500 text-sm font-bold uppercase">
-                            Total Itinerarios
+                        <p
+                            class="text-gray-500 text-[10px] sm:text-sm font-bold uppercase truncate"
+                        >
+                            Itinerarios
                         </p>
-                        <p class="text-3xl font-black">
+                        <p class="text-2xl sm:text-3xl font-black">
                             {{ stats.total_viajes }}
                         </p>
                     </div>
 
                     <div
-                        class="bg-white p-6 rounded-lg shadow border-l-4 border-yellow-400"
+                        class="bg-white p-4 sm:p-6 rounded-lg shadow border-l-4 border-yellow-400 flex flex-col justify-center overflow-hidden"
                     >
-                        <p class="text-gray-500 text-sm font-bold uppercase">
+                        <p
+                            class="text-gray-500 text-[10px] sm:text-sm font-bold uppercase truncate"
+                        >
                             Valoración Media
                         </p>
-                        <div class="flex items-end gap-2">
-                            <p class="text-3xl font-black text-gray-900">
+                        <div class="flex items-end gap-1 sm:gap-2">
+                            <p
+                                class="text-2xl sm:text-3xl font-black text-gray-900"
+                            >
                                 {{
                                     stats.valoracion_media
                                         ? stats.valoracion_media
                                         : "-"
                                 }}
                             </p>
-                            <span class="text-yellow-400 text-2xl mb-1 pb-0.5"
+                            <span
+                                class="text-yellow-400 text-lg sm:text-2xl mb-0.5 sm:mb-1 pb-0.5"
                                 >⭐</span
                             >
                         </div>
-                        <p class="text-xs text-gray-400 font-medium mt-1">
+                        <p
+                            class="text-[9px] sm:text-xs text-gray-400 font-medium mt-1 truncate"
+                        >
                             Basado en {{ stats.total_viajes_valorados }} reseñas
                         </p>
                     </div>
 
                     <div
-                        class="bg-white p-6 rounded-lg shadow border-l-4 border-green-500"
+                        class="bg-white p-4 sm:p-6 rounded-lg shadow border-l-4 border-green-500 flex flex-col justify-center"
                     >
-                        <p class="text-gray-500 text-sm font-bold uppercase">
+                        <p
+                            class="text-gray-500 text-[10px] sm:text-sm font-bold uppercase truncate"
+                        >
                             Tasa Modo Pro
                         </p>
-                        <p class="text-3xl font-black">
+                        <p class="text-2xl sm:text-3xl font-black">
                             {{
                                 stats.total_viajes > 0
                                     ? (
@@ -156,61 +212,114 @@ const ejecutarBorradoUsuario = () => {
                         <Bar :data="dataGrafica" />
                     </div>
 
-                    <div class="bg-white p-6 rounded-lg shadow overflow-hidden">
+                    <div
+                        class="bg-white p-6 rounded-lg shadow overflow-hidden w-full"
+                    >
                         <h3 class="font-bold text-gray-700 mb-4">
                             Gestión de Usuarios
                         </h3>
-                        <table class="min-w-full text-sm">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-4 py-2 text-left">Nombre</th>
-                                    <th class="px-4 py-2 text-left">Viajes</th>
-                                    <th class="px-4 py-2 text-right">
-                                        Acciones
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr
-                                    v-for="user in usuarios"
-                                    :key="user.id"
-                                    class="border-t"
-                                >
-                                    <td class="px-4 py-2">
-                                        <p class="font-bold">{{ user.name }}</p>
-                                        <p class="text-xs text-gray-400">
-                                            {{ user.email }}
-                                        </p>
-                                    </td>
-                                    <td class="px-4 py-2">
-                                        {{ user.viajes_count }}
-                                    </td>
-                                    <td class="px-4 py-2 text-right space-x-3">
-                                        <Link
-                                            :href="
-                                                route(
-                                                    'admin.usuarios.viajes',
-                                                    user.id,
-                                                )
-                                            "
-                                            class="text-blue-600 hover:text-blue-900 font-bold text-xs"
-                                        >
-                                            Ver Viajes
-                                        </Link>
+                        <div class="overflow-x-auto w-full">
+                            <table class="min-w-full text-sm whitespace-nowrap">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left">
+                                            Nombre
+                                        </th>
+                                        <th class="px-4 py-2 text-left">Rol</th>
+                                        <th class="px-4 py-2 text-center">
+                                            Viajes
+                                        </th>
+                                        <th class="px-4 py-2 text-center">
+                                            Acciones
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr
+                                        v-for="user in usuarios"
+                                        :key="user.id"
+                                        class="border-t"
+                                    >
+                                        <td class="px-4 py-2">
+                                            <p class="font-bold">
+                                                {{ user.name }}
+                                            </p>
+                                            <p class="text-xs text-gray-400">
+                                                {{ user.email }}
+                                            </p>
+                                        </td>
 
-                                        <button
-                                            @click="
-                                                confirmarBorradoUsuario(user.id)
-                                            "
-                                            type="button"
-                                            class="text-red-500 hover:underline text-xs font-bold"
-                                        >
-                                            Eliminar
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                        <td class="px-4 py-2">
+                                            <span
+                                                v-if="user.role_id === 1"
+                                                class="px-2 py-1 text-xs font-bold text-green-700 bg-green-100 rounded-full"
+                                            >
+                                                Admin
+                                            </span>
+                                            <span
+                                                v-else
+                                                class="px-2 py-1 text-xs font-bold text-gray-700 bg-gray-100 rounded-full"
+                                            >
+                                                Usuario
+                                            </span>
+                                        </td>
+
+                                        <td class="px-4 py-2 text-center">
+                                            {{ user.viajes_count }}
+                                        </td>
+
+                                        <td class="px-4 py-2 text-center">
+                                            <div
+                                                class="flex items-center justify-center space-x-4"
+                                            >
+                                                <button
+                                                    @click="
+                                                        intentarCambiarRol(user)
+                                                    "
+                                                    type="button"
+                                                    :class="
+                                                        user.role_id === 1
+                                                            ? 'text-orange-500 hover:text-orange-700'
+                                                            : 'text-purple-600 hover:text-purple-900'
+                                                    "
+                                                    class="font-bold text-xs transition-colors"
+                                                >
+                                                    {{
+                                                        user.role_id === 1
+                                                            ? "Quitar Admin"
+                                                            : "Hacer Admin"
+                                                    }}
+                                                </button>
+
+                                                <Link
+                                                    :href="
+                                                        route(
+                                                            'admin.usuarios.viajes',
+                                                            user.id,
+                                                        )
+                                                    "
+                                                    class="text-blue-500 hover:text-blue-800 font-bold text-xs transition-colors"
+                                                >
+                                                    Ver Viajes
+                                                </Link>
+
+                                                <button
+                                                    @click="
+                                                        confirmarBorradoUsuario(
+                                                            user.id,
+                                                        )
+                                                    "
+                                                    type="button"
+                                                    class="text-red-500 hover:text-red-800 text-xs font-bold transition-colors"
+                                                >
+                                                    Eliminar
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -224,5 +333,45 @@ const ejecutarBorradoUsuario = () => {
             @close="cancelarBorradoUsuario"
             @confirm="ejecutarBorradoUsuario"
         />
+
+        <ConfirmModal
+            :show="mostrarModalPassword"
+            title="Confirmación de Seguridad"
+            confirmText="Quitar Privilegios"
+            confirmColor="bg-orange-600 hover:bg-orange-700 shadow-orange-200"
+            :processing="formRol.processing"
+            @close="cancelarDegradacion"
+            @confirm="confirmarDegradacion"
+        >
+            <template #icon>
+                <div
+                    class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-orange-100 mb-6"
+                >
+                    <span class="text-orange-600 text-2xl">🔒</span>
+                </div>
+            </template>
+
+            <p class="text-sm text-gray-500 mb-5 font-medium">
+                Para quitarle los permisos de administrador a
+                <span class="font-bold text-gray-800">{{
+                    usuarioRolSeleccionado?.name
+                }}</span
+                >, introduce tu contraseña actual.
+            </p>
+
+            <input
+                v-model="formRol.password"
+                type="password"
+                placeholder="Tu contraseña de administrador"
+                class="w-full mb-1 px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 border-gray-300"
+                @keyup.enter="confirmarDegradacion"
+            />
+            <p
+                v-if="formRol.errors.password"
+                class="text-red-500 text-xs mb-2 text-left font-bold"
+            >
+                {{ formRol.errors.password }}
+            </p>
+        </ConfirmModal>
     </AuthenticatedLayout>
 </template>

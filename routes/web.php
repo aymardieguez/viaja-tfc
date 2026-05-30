@@ -50,6 +50,7 @@ Route::middleware('auth', 'verified')->group(function () {
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
     Route::get('/usuarios/{user}/viajes', [AdminController::class, 'usuarioViajes'])->name('usuarios.viajes');
+    Route::patch('/usuarios/{user}/cambiar-rol', [AdminController::class, 'cambiarRol'])->name('usuarios.cambiarRol');
     Route::delete('/usuarios/{user}', [AdminController::class, 'destroyUser'])->name('usuarios.destroy');
     Route::delete('/viajes/{viaje}', [AdminController::class, 'destroyViaje'])->name('viajes.destroy');
 });

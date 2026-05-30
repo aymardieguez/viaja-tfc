@@ -71,4 +71,28 @@ class AdminController extends Controller
         $viaje->delete();
         return back();
     }
+
+    public function cambiarRol(Request $request, User $user)
+    {
+        // evitar que un admin se quite el rol a sí mismo
+        if (auth()->id() === $user->id) {
+            return back();
+        }
+
+        if ($user->role_id === 1) {
+            // exigimos que el admin introduzca su propia contraseña
+            $request->validate([
+                'password' => ['required', 'current_password'],
+            ], [
+                'password.required' => 'La contraseña es obligatoria.',
+                'password.current_password' => 'La contraseña es incorrecta.'
+            ]);
+
+            $user->update(['role_id' => 2]);
+        } else {
+            $user->update(['role_id' => 1]);
+        }
+
+        return back();
+    }
 }
