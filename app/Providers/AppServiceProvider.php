@@ -33,7 +33,7 @@ class AppServiceProvider extends ServiceProvider
                 ->line('Si no creaste esta cuenta, no es necesario realizar ninguna acción.')
                 ->salutation('Un saludo, el equipo de Viaja');
         });
-        if (str_contains(request()->url(), 'ngrok')) {
+        if (env('APP_ENV') !== 'local' || str_contains(env('APP_URL'), 'ngrok')) {
             URL::forceScheme('https');
         }
     }
