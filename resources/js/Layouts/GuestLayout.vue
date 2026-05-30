@@ -20,7 +20,7 @@ const tituloDinamico = computed(() => {
 
 <template>
     <div
-        class="relative min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-900"
+        class="relative min-h-screen flex flex-col justify-center items-center py-6 bg-gray-900"
     >
         <div class="absolute inset-0 overflow-hidden z-0">
             <img
@@ -31,12 +31,12 @@ const tituloDinamico = computed(() => {
         </div>
 
         <div
-            class="relative z-10 w-full sm:max-w-md mt-6 px-8 py-10 bg-white shadow-2xl overflow-hidden sm:rounded-2xl border border-gray-100"
+            class="relative z-10 w-[90%] sm:w-full sm:max-w-md px-6 sm:px-8 py-8 sm:py-10 bg-white shadow-2xl overflow-hidden rounded-2xl border border-gray-100"
         >
             <div class="flex justify-center mb-8">
                 <Link href="/">
                     <span
-                        class="text-3xl font-extrabold text-gray-900 tracking-tight"
+                        class="text-3xl font-extrabold text-gray-900 tracking-tight text-center"
                     >
                         {{ tituloDinamico }}
                     </span>
