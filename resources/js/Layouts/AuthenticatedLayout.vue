@@ -20,6 +20,7 @@ const showingNavigationDropdown = ref(false);
                             <div class="flex shrink-0 items-center">
                                 <Link :href="route('dashboard')">
                                     <ApplicationLogo
+                                        fetchpriority="high"
                                         class="block h-12 w-auto"
                                     />
                                 </Link>

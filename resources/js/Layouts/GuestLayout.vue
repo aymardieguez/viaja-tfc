@@ -37,6 +37,7 @@ const tituloDinamico = computed(() => {
             <div class="flex flex-col items-center justify-center mb-8">
                 <Link href="/" class="flex flex-col items-center group">
                     <ApplicationLogo
+                        fetchpriority="high"
                         class="w-32 h-auto object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-105"
                     />
                     <h2
