@@ -33,7 +33,6 @@ const goBackMovil = () => {
                             class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex"
                         >
                             <NavLink
-                                v-if="!$page.props.auth.isAdmin"
                                 :href="route('dashboard')"
                                 :active="route().current('dashboard')"
                             >
@@ -149,7 +148,6 @@ const goBackMovil = () => {
             >
                 <div class="space-y-1 pb-3 pt-2">
                     <ResponsiveNavLink
-                        v-if="!$page.props.auth.isAdmin"
                         :href="route('dashboard')"
                         :active="route().current('dashboard')"
                         >Dashboard</ResponsiveNavLink
