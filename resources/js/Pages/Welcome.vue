@@ -39,6 +39,7 @@ defineProps({
             <img
                 src="/images/logo-viaja-apaisado.png"
                 alt="Logo VIAJA"
+                fetchpriority="high"
                 class="w-[90%] max-w-[380px] md:max-w-[500px] lg:max-w-[700px] object-contain mb-4 md:mb-8 transition-transform duration-500 hover:scale-105 drop-shadow-[0_0_30px_rgba(255,255,255,0.4)]"
             />
 
