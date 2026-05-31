@@ -44,6 +44,17 @@ const dataGrafica = {
     ],
 };
 
+//vista móvil para mostrar detalles adicionales al hacer click en un usuario
+const usuarioExpandido = ref(null);
+
+const toggleDetallesUsuario = (id) => {
+    if (usuarioExpandido.value === id) {
+        usuarioExpandido.value = null;
+    } else {
+        usuarioExpandido.value = id;
+    }
+};
+
 const mostrarModalUsuario = ref(false);
 const usuarioIdSeleccionado = ref(null);
 
@@ -264,113 +275,269 @@ const cerrarAlerta = () => {
                             {{ $page.props.flash.success }}
                         </div>
 
-                        <div class="overflow-x-auto w-full">
-                            <table class="min-w-full text-sm whitespace-nowrap">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-4 py-2 text-left">
-                                            Nombre
-                                        </th>
-                                        <th class="px-4 py-2 text-left">Rol</th>
-                                        <th class="px-4 py-2 text-center">
-                                            Viajes
-                                        </th>
-                                        <th class="px-4 py-2 text-center">
-                                            Acciones
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr
-                                        v-for="user in usuarios"
-                                        :key="user.id"
-                                        class="border-t"
+                        <div class="w-full">
+                            <div
+                                class="block sm:hidden divide-y divide-gray-100 border-t border-gray-100"
+                            >
+                                <div
+                                    v-for="user in usuarios"
+                                    :key="'mob-user-' + user.id"
+                                    class="bg-white"
+                                >
+                                    <button
+                                        @click="toggleDetallesUsuario(user.id)"
+                                        class="w-full text-left px-4 py-4 flex justify-between items-center focus:outline-none transition-colors hover:bg-gray-50"
                                     >
-                                        <td class="px-4 py-2">
-                                            <p class="font-bold">
-                                                {{ user.name }}
-                                            </p>
-                                            <p class="text-xs text-gray-400">
-                                                {{ user.email }}
-                                            </p>
-                                        </td>
-
-                                        <td class="px-4 py-2">
+                                        <div
+                                            class="flex flex-col truncate pr-4"
+                                        >
                                             <span
-                                                v-if="user.role_id === 1"
-                                                class="px-2 py-1 text-xs font-bold text-green-700 bg-green-100 rounded-full"
+                                                class="font-bold text-gray-900 truncate"
+                                                >{{ user.name }}</span
                                             >
-                                                Admin
-                                            </span>
                                             <span
-                                                v-else
-                                                class="px-2 py-1 text-xs font-bold text-gray-700 bg-gray-100 rounded-full"
+                                                class="text-xs text-gray-400 truncate"
+                                                >{{ user.email }}</span
                                             >
-                                                Usuario
-                                            </span>
-                                        </td>
+                                        </div>
+                                        <svg
+                                            :class="{
+                                                'rotate-180':
+                                                    usuarioExpandido ===
+                                                    user.id,
+                                            }"
+                                            class="w-5 h-5 text-gray-400 transition-transform duration-200 flex-shrink-0"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                stroke-width="2"
+                                                d="M19 9l-7 7-7-7"
+                                            />
+                                        </svg>
+                                    </button>
 
-                                        <td class="px-4 py-2 text-center">
-                                            {{ user.viajes_count }}
-                                        </td>
-
-                                        <td class="px-4 py-2 text-center">
+                                    <div
+                                        v-show="usuarioExpandido === user.id"
+                                        class="px-4 pb-5 pt-1 bg-gray-50"
+                                    >
+                                        <div
+                                            class="space-y-3 text-sm text-gray-600 mb-5 border-t border-gray-200 pt-4"
+                                        >
                                             <div
-                                                v-if="user.id !== 1"
-                                                class="flex items-center justify-center space-x-4"
+                                                class="flex justify-between items-center"
                                             >
-                                                <button
-                                                    @click="
-                                                        intentarCambiarRol(user)
-                                                    "
-                                                    type="button"
-                                                    :class="
-                                                        user.role_id === 1
-                                                            ? 'text-orange-500 hover:text-orange-700'
-                                                            : 'text-purple-600 hover:text-purple-900'
-                                                    "
-                                                    class="font-bold text-xs transition-colors"
+                                                <span
+                                                    class="font-bold text-gray-700"
+                                                    >Rol:</span
                                                 >
-                                                    {{
-                                                        user.role_id === 1
-                                                            ? "Quitar Admin"
-                                                            : "Hacer Admin"
-                                                    }}
-                                                </button>
-
-                                                <Link
-                                                    :href="
-                                                        route(
-                                                            'admin.usuarios.viajes',
-                                                            user.id,
-                                                        )
-                                                    "
-                                                    class="text-blue-500 hover:text-blue-800 font-bold text-xs transition-colors"
+                                                <span
+                                                    v-if="user.role_id === 1"
+                                                    class="px-2 py-1 text-[10px] font-bold text-green-700 bg-green-100 rounded-full uppercase tracking-wide"
+                                                    >Admin</span
                                                 >
-                                                    Ver Viajes
-                                                </Link>
-
-                                                <button
-                                                    @click="
-                                                        confirmarBorradoUsuario(
-                                                            user,
-                                                        )
-                                                    "
-                                                    type="button"
-                                                    class="text-red-500 hover:text-red-800 text-xs font-bold transition-colors"
+                                                <span
+                                                    v-else
+                                                    class="px-2 py-1 text-[10px] font-bold text-gray-700 bg-gray-200 rounded-full uppercase tracking-wide"
+                                                    >Usuario</span
                                                 >
-                                                    Eliminar
-                                                </button>
                                             </div>
-                                            <span
-                                                v-else
-                                                class="text-gray-300 font-bold"
-                                                >-</span
+                                            <div
+                                                class="flex justify-between items-center"
                                             >
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                                                <span
+                                                    class="font-bold text-gray-700"
+                                                    >Itinerarios:</span
+                                                >
+                                                <span
+                                                    class="font-bold text-gray-900"
+                                                    >{{
+                                                        user.viajes_count
+                                                    }}</span
+                                                >
+                                            </div>
+                                        </div>
+
+                                        <div class="flex flex-col gap-2">
+                                            <button
+                                                v-if="user.id !== 1"
+                                                @click="
+                                                    intentarCambiarRol(user)
+                                                "
+                                                type="button"
+                                                :class="
+                                                    user.role_id === 1
+                                                        ? 'bg-orange-50 text-orange-600 hover:bg-orange-100 border-orange-100'
+                                                        : 'bg-purple-50 text-purple-600 hover:bg-purple-100 border-purple-100'
+                                                "
+                                                class="w-full font-bold py-2.5 rounded-lg text-xs transition-colors border shadow-sm"
+                                            >
+                                                {{
+                                                    user.role_id === 1
+                                                        ? "Quitar Administrador"
+                                                        : "Hacer Administrador"
+                                                }}
+                                            </button>
+
+                                            <Link
+                                                :href="
+                                                    route(
+                                                        'admin.usuarios.viajes',
+                                                        user.id,
+                                                    )
+                                                "
+                                                class="w-full text-center bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-100 font-bold py-2.5 rounded-lg text-xs transition-colors shadow-sm"
+                                            >
+                                                Ver Viajes
+                                            </Link>
+
+                                            <button
+                                                v-if="user.id !== 1"
+                                                @click="
+                                                    confirmarBorradoUsuario(
+                                                        user,
+                                                    )
+                                                "
+                                                type="button"
+                                                class="w-full bg-red-50 text-red-600 hover:bg-red-100 border border-red-100 font-bold py-2.5 rounded-lg text-xs transition-colors shadow-sm"
+                                            >
+                                                Eliminar Usuario
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div
+                                    v-if="usuarios.length === 0"
+                                    class="px-6 py-10 text-center text-gray-500 text-sm"
+                                >
+                                    No hay usuarios en la plataforma.
+                                </div>
+                            </div>
+
+                            <div class="hidden sm:block overflow-x-auto w-full">
+                                <table
+                                    class="min-w-full text-sm whitespace-nowrap"
+                                >
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-4 py-2 text-left">
+                                                Nombre
+                                            </th>
+                                            <th class="px-4 py-2 text-left">
+                                                Rol
+                                            </th>
+                                            <th class="px-4 py-2 text-center">
+                                                Viajes
+                                            </th>
+                                            <th class="px-4 py-2 text-center">
+                                                Acciones
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr
+                                            v-for="user in usuarios"
+                                            :key="user.id"
+                                            class="border-t hover:bg-gray-50 transition-colors"
+                                        >
+                                            <td class="px-4 py-3">
+                                                <p
+                                                    class="font-bold text-gray-900"
+                                                >
+                                                    {{ user.name }}
+                                                </p>
+                                                <p
+                                                    class="text-xs text-gray-500"
+                                                >
+                                                    {{ user.email }}
+                                                </p>
+                                            </td>
+
+                                            <td class="px-4 py-3">
+                                                <span
+                                                    v-if="user.role_id === 1"
+                                                    class="px-2 py-1 text-xs font-bold text-green-700 bg-green-100 rounded-full"
+                                                >
+                                                    Admin
+                                                </span>
+                                                <span
+                                                    v-else
+                                                    class="px-2 py-1 text-xs font-bold text-gray-700 bg-gray-100 rounded-full"
+                                                >
+                                                    Usuario
+                                                </span>
+                                            </td>
+
+                                            <td
+                                                class="px-4 py-3 text-center font-medium"
+                                            >
+                                                {{ user.viajes_count }}
+                                            </td>
+
+                                            <td class="px-4 py-3 text-center">
+                                                <div
+                                                    v-if="user.id !== 1"
+                                                    class="flex items-center justify-center space-x-4"
+                                                >
+                                                    <button
+                                                        @click="
+                                                            intentarCambiarRol(
+                                                                user,
+                                                            )
+                                                        "
+                                                        type="button"
+                                                        :class="
+                                                            user.role_id === 1
+                                                                ? 'text-orange-500 hover:text-orange-700'
+                                                                : 'text-purple-600 hover:text-purple-900'
+                                                        "
+                                                        class="font-bold text-xs transition-colors"
+                                                    >
+                                                        {{
+                                                            user.role_id === 1
+                                                                ? "Quitar Admin"
+                                                                : "Hacer Admin"
+                                                        }}
+                                                    </button>
+
+                                                    <Link
+                                                        :href="
+                                                            route(
+                                                                'admin.usuarios.viajes',
+                                                                user.id,
+                                                            )
+                                                        "
+                                                        class="text-blue-500 hover:text-blue-800 font-bold text-xs transition-colors"
+                                                    >
+                                                        Ver Viajes
+                                                    </Link>
+
+                                                    <button
+                                                        @click="
+                                                            confirmarBorradoUsuario(
+                                                                user,
+                                                            )
+                                                        "
+                                                        type="button"
+                                                        class="text-red-500 hover:text-red-800 text-xs font-bold transition-colors"
+                                                    >
+                                                        Eliminar
+                                                    </button>
+                                                </div>
+                                                <span
+                                                    v-else
+                                                    class="text-gray-300 font-bold"
+                                                    >-</span
+                                                >
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
