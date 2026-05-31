@@ -1,5 +1,6 @@
 <script setup>
 import { Head, Link } from "@inertiajs/vue3";
+import CookieBanner from "@/Components/CookieBanner.vue";
 
 defineProps({
     canLogin: {
@@ -91,7 +92,15 @@ defineProps({
         <div
             class="absolute bottom-5 w-full text-center text-gray-400 text-sm font-medium tracking-wide"
         >
-            <p>Proyecto TFC - Aymar Salgado Diéguez</p>
+            <a
+                href="https://github.com/aymardieguez/viaja-tfc"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="hover:text-gray-200 transition"
+            >
+                TFC - Aymar Salgado Diéguez
+            </a>
         </div>
     </div>
+    <CookieBanner />
 </template>

@@ -18,6 +18,8 @@ Route::get('/', function () {
     ]);
 });
 
+Route::inertia('/privacidad', 'Privacy')->name('privacidad');
+
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard', [
         // Buscamos los viajes del usuario logueado, ordenados por el más reciente
