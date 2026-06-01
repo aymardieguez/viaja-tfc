@@ -57,4 +57,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/viajes/{viaje}', [AdminController::class, 'destroyViaje'])->name('viajes.destroy');
 });
 
+Route::fallback(function () {
+    if (Auth::check() && Auth::id() === 1) {
+        return redirect()->route('admin.dashboard');
+    }
+    return redirect()->route('dashboard');
+});
+
 require __DIR__ . '/auth.php';
