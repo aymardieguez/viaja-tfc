@@ -35,7 +35,7 @@ const formatearDescripcion = (texto) => {
     </Head>
 
     <nav
-        class="bg-white border-b border-gray-100 py-4 px-6 flex justify-between items-center shadow-sm relative z-20"
+        class="bg-white border-b border-gray-100 py-4 px-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0 shadow-sm relative z-20"
     >
         <Link href="/" class="flex items-center gap-3 group">
             <ApplicationLogo
@@ -60,7 +60,7 @@ const formatearDescripcion = (texto) => {
 
         <Link
             href="/register"
-            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-5 rounded-full transition text-sm shadow-md hover:shadow-lg"
+            class="w-full sm:w-auto text-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-5 rounded-full transition text-sm shadow-md hover:shadow-lg"
         >
             Crear mi propio viaje con IA ✨
         </Link>
