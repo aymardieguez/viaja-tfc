@@ -298,13 +298,16 @@ const formatearDescripcion = (texto) => {
                     </div>
                 </div>
 
-                <h3
-                    class="text-2xl font-bold text-gray-900 mb-6 flex items-center"
-                >
-                    <span class="bg-blue-100 p-2 rounded-lg mr-3"
-                        >Tu Itinerario Diario</span
+                <div class="mb-8 w-full text-center sm:text-left">
+                    <h3
+                        class="text-2xl sm:text-3xl font-extrabold text-gray-900 inline-block"
                     >
-                </h3>
+                        Tu Itinerario Diario
+                        <span
+                            class="block w-16 h-1.5 bg-blue-600 rounded-full mt-2 mx-auto sm:mx-0 opacity-80"
+                        ></span>
+                    </h3>
+                </div>
 
                 <div
                     v-if="viaje.dias.length === 0"
