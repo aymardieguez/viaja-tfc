@@ -20,9 +20,9 @@ A través de un buscador avanzado, el usuario parametriza sus necesidades (desti
 
 ## 🏗️ Arquitectura del Sistema (Stack Tecnológico)
 
-Este proyecto abandona las arquitecturas monolíticas tradicionales para abrazar los estándares modernos de la industria, garantizando modularidad, seguridad y reactividad.
+Este proyecto utiliza los estándares modernos de la industria, garantizando modularidad, seguridad y reactividad.
 
-- **Backend (PHP 8.3 & Laravel 11):** Actúa como el cerebro del sistema. Gestiona la lógica de negocio, la seguridad criptográfica de las rutas compartidas y la comunicación con APIs externas.
+- **Backend (PHP 8.3 & Laravel 11):** Actúa como el cerebro del sistema. Gestiona la lógica de negocio, la seguridad de las rutas compartidas y la comunicación con APIs externas.
 - **Frontend (Vue.js 3 & Tailwind CSS):** Interfaz de usuario reactiva, fluida y adaptada a dispositivos móviles (Mobile First). Se apoya en librerías como Chart.js para la visualización de métricas analíticas en los paneles de administración.
 - **El Puente (Inertia.js & Laravel Breeze):** Sustituye la necesidad de construir y mantener una API REST tradicional. Inertia permite que los controladores de Laravel rendericen componentes de Vue directamente, inyectando los datos de la base de datos como _props_ de forma segura y veloz.
 - **Persistencia (MySQL 8.4):** Sistema de gestión de base de datos relacional para almacenar usuarios, roles, métricas y el histórico completo de los itinerarios generados.
